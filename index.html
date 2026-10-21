@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ComputerTech — Hệ thống Quản lý Đơn hàng, Kho & Bảo hành / Sửa chữa</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ================= 1. MÀN HÌNH ĐĂNG NHẬP & CHỌN VAI TRÒ ================= -->
+  <div id="loginView" class="login-wrapper">
+    <div class="login-card">
+      <div class="login-sidebar">
+        <div>
+          <div class="login-brand">
+            <div class="brand-badge">CT</div>
+            <div class="brand-text">
+              <h2>ComputerTech</h2>
+              <p>Hệ thống Quản trị Doanh nghiệp</p>
+            </div>
+          </div>
+          <div class="login-side-content">
+            <h3>Vận hành liền mạch.<br>Kiểm soát rõ ràng.</h3>
+            <p>Giải pháp quản lý toàn diện đơn hàng, theo dõi tồn kho 3 trạng thái và quy trình bảo hành/sửa chữa thiết bị tin học.</p>
+          </div>
+        </div>
+        <div class="login-side-footer">
+          <div>Đơn vị tham khảo: <strong>Công ty Cổ phần Máy tính Biên Hòa</strong></div>
+          <div style="margin-top: 4px;">Đồ án thiết kế phần mềm · Desktop 1440 × 900 · 2026</div>
+        </div>
+      </div>
+
+      <div class="login-form-area">
+        <h2>Đăng nhập hệ thống</h2>
+        <p class="subtext">Vui lòng đăng nhập hoặc chọn 1 trong 4 tài khoản thử nghiệm bên dưới:</p>
+
+        <!-- 4 TÀI KHOẢN TẠO SẴN THỬ NGAY -->
+        <div class="quick-roles">
+          <div class="quick-roles-title">
+            <span>⚡ Chọn nhanh tài khoản thử nghiệm (1 Click):</span>
+          </div>
+          <div class="roles-grid">
+            <div class="role-btn" onclick="quickLogin('admin')">
+              <div class="role-avatar" style="background: #17365D;">TQ</div>
+              <div class="role-info">
+                <div class="name">Trần Quản Trị</div>
+                <div class="title">Quản trị viên (Admin)</div>
+              </div>
+            </div>
+
+            <div class="role-btn" onclick="quickLogin('sale')">
+              <div class="role-avatar" style="background: #2563EB;">LT</div>
+              <div class="role-info">
+                <div class="name">Lê Thu Trang</div>
+                <div class="title">Bán hàng (Sale)</div>
+              </div>
+            </div>
+
+            <div class="role-btn" onclick="quickLogin('kho')">
+              <div class="role-avatar" style="background: #059669;">PV</div>
+              <div class="role-info">
+                <div class="name">Phạm Văn Kho</div>
+                <div class="title">Thủ kho (Kho)</div>
+              </div>
+            </div>
+
+            <div class="role-btn" onclick="quickLogin('kythuat')">
+              <div class="role-avatar" style="background: #D97706;">AT</div>
+              <div class="role-info">
+                <div class="name">Đỗ Anh Tuấn</div>
+                <div class="title">Kỹ thuật viên</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider">
+          <span>HOẶC ĐĂNG NHẬP THỦ CÔNG</span>
+        </div>
+
+        <form onsubmit="handleLoginForm(event)">
+          <div class="form-group">
+            <label>Tài khoản (admin / sale / kho / kythuat):</label>
+            <input type="text" id="loginUsername" class="form-control" placeholder="Nhập tên đăng nhập" value="admin" required>
+          </div>
+          <div class="form-group">
+            <label>Mật khẩu (mặc định: 123):</label>
+            <input type="password" id="loginPassword" class="form-control" placeholder="Nhập mật khẩu" value="123" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">
+            Đăng nhập vào hệ thống
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 2. GIAO DIỆN CHÍNH (APP VIEW) ================= -->
+  <div id="appView" class="app-container" style="display: none;">
+    <!-- SIDEBAR BÊN TRÁI -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-badge" style="width: 36px; height: 36px; font-size: 16px;">CT</div>
+        <div class="brand-text">
+          <h2 style="font-size: 18px;">ComputerTech</h2>
+          <p style="font-size: 11px;">Biên Hòa Computer ERP</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">KHÔNG GIAN LÀM VIỆC</div>
+        
+        <a class="nav-item active" data-tab="dashboard" onclick="navigate('dashboard')">
+          <span>📊</span>
+          <span>Tổng quan</span>
+        </a>
+
+        <a class="nav-item" data-tab="donhang" onclick="navigate('donhang')">
+          <span>📦</span>
+          <span>Đơn hàng</span>
+        </a>
+
+        <a class="nav-item" data-tab="kho" onclick="navigate('kho')">
+          <span>🏭</span>
+          <span>Kho hàng</span>
+          <span class="nav-badge" style="background: #DC2626;">3 sắp hết</span>
+        </a>
+
+        <a class="nav-item" data-tab="khachhang" onclick="navigate('khachhang')">
+          <span>👥</span>
+          <span>Khách hàng</span>
+        </a>
+
+        <a class="nav-item" data-tab="sanpham" onclick="navigate('sanpham')">
+          <span>💻</span>
+          <span>Sản phẩm</span>
+        </a>
+
+        <a class="nav-item" data-tab="suachua" onclick="navigate('suachua')">
+          <span>🛠</span>
+          <span>Bảo hành & Sửa chữa</span>
+          <span class="nav-badge">6 bước</span>
+        </a>
+
+        <div class="nav-section-title" style="margin-top: 20px;">QUẢN TRỊ NỘI BỘ</div>
+
+        <a class="nav-item" data-tab="baocao" onclick="navigate('baocao')">
+          <span>📈</span>
+          <span>Báo cáo thống kê</span>
+        </a>
+
+        <a class="nav-item" data-tab="nhanvien" onclick="navigate('nhanvien')">
+          <span>🔐</span>
+          <span>Nhân viên & Phân quyền</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile-badge">
+          <div id="sidebarUserAvatar" class="u-avatar">TQ</div>
+          <div class="u-info">
+            <div id="sidebarUserName" class="u-name">Trần Quản Trị</div>
+            <div id="sidebarUserRole" class="u-role">Quản trị viên</div>
+          </div>
+          <div class="logout-icon" title="Đăng xuất" onclick="logout()">⎋</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- KHU VỰC NỘI DUNG CHÍNH -->
+    <main class="main-content">
+      <!-- TOP NAVBAR -->
+      <header class="top-navbar">
+        <div class="top-left">
+          <h1 id="pageTitle" class="page-title">Tổng quan hệ thống</h1>
+          <span id="topRolePill" class="role-pill">Admin</span>
+        </div>
+
+        <div class="top-right">
+          <div class="search-box">
+            <span>🔍</span>
+            <input type="text" placeholder="Tìm kiếm đơn, khách, linh kiện...">
+          </div>
+
+          <!-- ĐỔI VAI TRÒ NHANH TRÊN HEADER CHO GIẢNG VIÊN / NGƯỜI ĐÁNH GIÁ -->
+          <select id="roleSwitcher" class="role-switch-select" onchange="switchRole(this.value)">
+            <!-- Điền tự động bởi app.js -->
+          </select>
+
+          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;" onclick="logout()">
+            Đăng xuất
+          </button>
+        </div>
+      </header>
+
+      <!-- BODY NỘI DUNG THAY ĐỔI THEO TAB -->
+      <div id="mainContentBody" class="content-body">
+        <!-- Render bởi app.js -->
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL CHUNG -->
+  <div id="appModal" class="modal-backdrop">
+    <div id="modalContent" class="modal-card">
+      <!-- Nội dung modal động -->
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- SCRIPTS -->
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
