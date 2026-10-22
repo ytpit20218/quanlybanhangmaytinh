@@ -14,7 +14,7 @@ const DEMO_USERS = [
     email: "admin@computertech.vn",
     phone: "0908 111 222",
     avatar: "TQ",
-    avatarBg: "#17365D",
+    avatarBg: "#0B57D0",
     desc: "Toàn quyền quản trị: Báo cáo, Nhân sự, Phân quyền, Kho & Bán hàng"
   },
   {
@@ -27,7 +27,7 @@ const DEMO_USERS = [
     email: "trang.le@computertech.vn",
     phone: "0912 333 444",
     avatar: "LT",
-    avatarBg: "#2563EB",
+    avatarBg: "#00639B",
     desc: "Tạo đơn hàng, kiểm tra tồn, tiếp nhận & bàn giao thiết bị bảo hành"
   },
   {
@@ -40,7 +40,7 @@ const DEMO_USERS = [
     email: "kho.pham@computertech.vn",
     phone: "0934 555 666",
     avatar: "PV",
-    avatarBg: "#059669",
+    avatarBg: "#146C2E",
     desc: "Quản lý tồn kho, nhập xuất kho, phê duyệt cấp linh kiện sửa chữa"
   },
   {
@@ -53,7 +53,7 @@ const DEMO_USERS = [
     email: "tuan.do@computertech.vn",
     phone: "0978 777 888",
     avatar: "AT",
-    avatarBg: "#D97706",
+    avatarBg: "#B06000",
     desc: "Tiếp nhận phiếu SC, chẩn đoán lỗi, yêu cầu linh kiện, kiểm tra KCS"
   }
 ];

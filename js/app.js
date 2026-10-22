@@ -266,26 +266,26 @@ function renderDashboard(container) {
     </div>
 
     <!-- ROLE ACTION QUICK BANNER -->
-    <div class="card" style="background: linear-gradient(135deg, #17365D 0%, #1e4b85 100%); color: white; padding: 18px 24px; margin-bottom: 24px;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="card role-action-banner" style="background: linear-gradient(135deg, #0B57D0 0%, #1A73E8 100%); color: white; padding: 22px 28px; margin-bottom: 24px; border: none; border-radius: 20px; box-shadow: 0 4px 20px rgba(11, 87, 208, 0.18);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
         <div>
-          <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">
-            Khu vực thao tác nghiệp vụ nhanh · Vai trò: ${state.currentUser.roleTitle}
+          <h3 style="font-size: 17px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+            <span>⚡</span> Khu vực thao tác nghiệp vụ nhanh · Vai trò: ${state.currentUser.roleTitle}
           </h3>
-          <p style="font-size: 13px; color: #CBD5E1;">
+          <p style="font-size: 13.5px; color: rgba(255, 255, 255, 0.92); line-height: 1.4;">
             ${state.currentUser.desc}
           </p>
         </div>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           ${state.currentUser.role === 'Sale' || state.currentUser.role === 'Admin' ? `
-            <button class="btn btn-primary" onclick="openCreateOrderModal()">+ Tạo đơn hàng</button>
-            <button class="btn btn-secondary" onclick="openCreateServiceModal()">+ Tiếp nhận sửa chữa</button>
+            <button class="btn btn-m3-white" onclick="openCreateOrderModal()">+ Tạo đơn hàng</button>
+            <button class="btn btn-m3-tonal-white" onclick="openCreateServiceModal()">+ Tiếp nhận sửa chữa</button>
           ` : ''}
           ${state.currentUser.role === 'Kho' || state.currentUser.role === 'Admin' ? `
-            <button class="btn btn-success" onclick="openStockImportModal()">+ Nhập hàng vào kho</button>
+            <button class="btn btn-m3-white" onclick="openStockImportModal()">+ Nhập hàng vào kho</button>
           ` : ''}
           ${state.currentUser.role === 'Kỹ thuật' || state.currentUser.role === 'Admin' ? `
-            <button class="btn btn-warning" onclick="navigate('suachua')">Xem phiếu SC được giao</button>
+            <button class="btn btn-m3-white" onclick="navigate('suachua')">Xem phiếu SC được giao</button>
           ` : ''}
         </div>
       </div>
@@ -301,48 +301,49 @@ function renderDashboard(container) {
           </div>
           <span class="badge badge-blue">Cập nhật 21/10/2026</span>
         </div>
-        <div class="card-body" style="padding: 18px 24px;">
+        <div class="card-body" style="padding: 20px 24px;">
           <!-- SVG Bar Chart -->
           <svg viewBox="0 0 650 180" style="width: 100%; height: auto;">
             <!-- Grid Lines -->
-            <line x1="40" y1="20" x2="630" y2="20" stroke="#E2E8F0" stroke-dasharray="3,3" />
-            <line x1="40" y1="60" x2="630" y2="60" stroke="#E2E8F0" stroke-dasharray="3,3" />
-            <line x1="40" y1="100" x2="630" y2="100" stroke="#E2E8F0" stroke-dasharray="3,3" />
-            <line x1="40" y1="140" x2="630" y2="140" stroke="#CBD5E1" stroke-width="1.5" />
+            <line x1="40" y1="20" x2="630" y2="20" stroke="#E0E2EC" stroke-dasharray="3,3" />
+            <line x1="40" y1="60" x2="630" y2="60" stroke="#E0E2EC" stroke-dasharray="3,3" />
+            <line x1="40" y1="100" x2="630" y2="100" stroke="#E0E2EC" stroke-dasharray="3,3" />
+            <line x1="40" y1="140" x2="630" y2="140" stroke="#C4C7C5" stroke-width="1.5" />
             
-            <text x="10" y="24" fill="#94A3B8" font-size="11">60Tr</text>
-            <text x="10" y="64" fill="#94A3B8" font-size="11">40Tr</text>
-            <text x="10" y="104" fill="#94A3B8" font-size="11">20Tr</text>
-            <text x="25" y="144" fill="#94A3B8" font-size="11">0</text>
+            <text x="10" y="24" fill="#747775" font-size="11">60Tr</text>
+            <text x="10" y="64" fill="#747775" font-size="11">40Tr</text>
+            <text x="10" y="104" fill="#747775" font-size="11">20Tr</text>
+            <text x="25" y="144" fill="#747775" font-size="11">0</text>
 
             <!-- Bars -->
-            <rect x="70" y="70" width="36" height="70" rx="4" fill="#2563EB" opacity="0.85" />
-            <text x="75" y="160" fill="#64748B" font-size="11">15/10</text>
-            <text x="72" y="62" fill="#1E293B" font-size="10" font-weight="600">32Tr</text>
+            <rect x="70" y="70" width="36" height="70" rx="8" fill="#0B57D0" opacity="0.9" />
+            <text x="75" y="160" fill="#444746" font-size="11" font-weight="500">15/10</text>
+            <text x="72" y="62" fill="#1F1F1F" font-size="10" font-weight="600">32Tr</text>
 
-            <rect x="150" y="55" width="36" height="85" rx="4" fill="#2563EB" opacity="0.85" />
-            <text x="155" y="160" fill="#64748B" font-size="11">16/10</text>
-            <text x="152" y="47" fill="#1E293B" font-size="10" font-weight="600">39Tr</text>
+            <rect x="150" y="55" width="36" height="85" rx="8" fill="#0B57D0" opacity="0.9" />
+            <text x="155" y="160" fill="#444746" font-size="11" font-weight="500">16/10</text>
+            <text x="152" y="47" fill="#1F1F1F" font-size="10" font-weight="600">39Tr</text>
 
-            <rect x="230" y="90" width="36" height="50" rx="4" fill="#2563EB" opacity="0.85" />
-            <text x="235" y="160" fill="#64748B" font-size="11">17/10</text>
-            <text x="232" y="82" fill="#1E293B" font-size="10" font-weight="600">24Tr</text>
+            <rect x="230" y="90" width="36" height="50" rx="8" fill="#0B57D0" opacity="0.9" />
+            <text x="235" y="160" fill="#444746" font-size="11" font-weight="500">17/10</text>
+            <text x="232" y="82" fill="#1F1F1F" font-size="10" font-weight="600">24Tr</text>
 
-            <rect x="310" y="40" width="36" height="100" rx="4" fill="#2563EB" opacity="0.85" />
-            <text x="315" y="160" fill="#64748B" font-size="11">18/10</text>
-            <text x="312" y="32" fill="#1E293B" font-size="10" font-weight="600">48Tr</text>
+            <rect x="310" y="40" width="36" height="100" rx="8" fill="#0B57D0" opacity="0.9" />
+            <text x="315" y="160" fill="#444746" font-size="11" font-weight="500">18/10</text>
+            <text x="312" y="32" fill="#1F1F1F" font-size="10" font-weight="600">48Tr</text>
 
-            <rect x="390" y="75" width="36" height="65" rx="4" fill="#2563EB" opacity="0.85" />
-            <text x="395" y="160" fill="#64748B" font-size="11">19/10</text>
-            <text x="392" y="67" fill="#1E293B" font-size="10" font-weight="600">29Tr</text>
+            <rect x="390" y="75" width="36" height="65" rx="8" fill="#0B57D0" opacity="0.9" />
+            <text x="395" y="160" fill="#444746" font-size="11" font-weight="500">19/10</text>
+            <text x="392" y="67" fill="#1F1F1F" font-size="10" font-weight="600">29Tr</text>
 
-            <rect x="470" y="50" width="36" height="90" rx="4" fill="#2563EB" opacity="0.85" />
-            <text x="475" y="160" fill="#64748B" font-size="11">20/10</text>
-            <text x="472" y="42" fill="#1E293B" font-size="10" font-weight="600">42Tr</text>
+            <rect x="470" y="50" width="36" height="90" rx="8" fill="#0B57D0" opacity="0.9" />
+            <text x="475" y="160" fill="#444746" font-size="11" font-weight="500">20/10</text>
+            <text x="472" y="42" fill="#1F1F1F" font-size="10" font-weight="600">42Tr</text>
 
             <!-- Hôm nay nổi bật -->
-            <rect x="550" y="30" width="36" height="110" rx="4" fill="#16A34A" />
-            <text x="548" y="160" fill="#16A34A" font-size="11" font-weight="700">Hôm nay</text>
+            <rect x="550" y="30" width="36" height="110" rx="8" fill="#146C2E" />
+            <text x="546" y="160" fill="#146C2E" font-size="11" font-weight="700">Hôm nay</text>
+            <text x="552" y="22" fill="#146C2E" font-size="11" font-weight="700">54Tr</text>
             <text x="552" y="22" fill="#16A34A" font-size="11" font-weight="700">54Tr</text>
           </svg>
         </div>

@@ -1,7 +1,7 @@
 # ComputerTech — Hệ thống Quản lý Bán hàng, Kho & Bảo hành / Sửa chữa Máy tính
 
 > **Đơn vị nghiệp vụ tham khảo:** Công ty Cổ phần Máy tính Biên Hòa  
-> **Phong cách thiết kế:** Giao diện quản trị doanh nghiệp hiện đại, chuẩn Desktop 1440 × 900 px, Tiếng Việt, đơn vị VNĐ.
+> **Phong cách thiết kế:** Giao diện Google Material Design 3 (Material You / M3) hiện đại với hệ màu Dynamic Tonal (#0B57D0 Google Blue), Navigation Drawer sáng màu dạng Pill capsule, Search Bar bo tròn M3, chuẩn Desktop 1440 × 900 px, Tiếng Việt, đơn vị VNĐ.
 
 ---
 
