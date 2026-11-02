@@ -12,7 +12,7 @@ set "GIT_EXE=C:\Users\Admin\.cache\codex-runtimes\codex-primary-runtime\dependen
 "%GIT_EXE%" remote add origin https://github.com/ytpit20218/quanlybanhangmaytinh.git
 "%GIT_EXE%" branch -M main
 "%GIT_EXE%" add .
-"%GIT_EXE%" commit -m "feat: Nang cap toan bo he thong ComputerTech (React + TypeScript + Vite + Aiven MySQL)"
+"%GIT_EXE%" commit -m "refactor: Tach biet kien truc Frontend (React 18 + Vite) va Backend (Express + Aiven MySQL)"
 "%GIT_EXE%" push -u origin main --force
 
 echo.

@@ -1,113 +1,130 @@
 # ComputerTech — Precision Hardware Retail & Technical Operations Platform
 
-## Overview
+## Tổng quan dự án
 
-**ComputerTech** is a commercial-grade, multi-tenant computer retail, warehouse inventory, point-of-sale (POS), warranty, and lab repair operations platform. It breaks away from generic dashboard conventions through a **tri-workspace architectural paradigm** anchored by a unified high-precision design system.
+**ComputerTech** là nền tảng quản trị bán lẻ thiết bị phần cứng, máy tính cao cấp, quản lý kho đa điểm, quầy thu ngân (POS), quản lý bảo hành và điều phối kỹ thuật sửa chữa theo tiêu chuẩn công nghiệp.
 
----
-
-## 🎨 Creative Direction & Tri-Workspace Architecture
-
-### 1. Direction A — Editorial Technology Commerce (Storefront & Catalog)
-- **Visual Composition**: Architectural display typography, asymmetric product highlights, tactile technical parameter matrices, generous whitespace, and high-contrast monochrome framing with warm solar orange highlights (`#ea580c`).
-- **Core Features**: Live catalog discovery, category filters (Laptops, PC Parts, Displays, Accessories), real-time stock availability (`Available = OnHand - Reserved`), warranty terms, and task-focused checkout drawer with immediate stock validation.
-
-### 2. Direction B — Industrial Service Operations (Inventory Matrix & POS Counter)
-- **Visual Composition**: High-scanability monospaced data tables (`JetBrains Mono`, `font-feature-settings: 'tnum'`), micro-borders, sticky action headers, and zero decorative fluff.
-- **Core Features**:
-  - **POS Counter**: Rapid SKU barcode scanning, quick-access hardware palette, customer account selection (Standard vs VIP), payment settlement, and printable tax receipts.
-  - **Inventory Matrix**: Numeric alignment for `OnHand`, `Reserved`, and `Available`. Reorder alerts for low stock. Contextual modals for **Stock Receipt**, **Stock Issue**, and **Stock Adjustment** with mandatory audit reasons (BR.04) and real-time transaction ledger.
-
-### 3. Direction C — Modern Technical Workshop (Repair Bench & Diagnostics)
-- **Visual Composition**: Workbench-inspired split-screen lab layout.
-- **Core Features**: Hardware intake with serial number tracking (BR.06), interactive diagnostic stepper (`Intake -> Diagnosing -> Awaiting Parts -> In Progress -> Repaired -> Handed Over`), live diagnostic notes editor, and an **Atomic Parts Requisition Bench** that validates availability and deducts stock directly from warehouse inventory (BR.08).
+Hệ thống được tổ chức phân tách rõ ràng thành hai phân hệ độc lập:
+- **`frontend/`**: Ứng dụng Single Page Application (React 18 + TypeScript + Vite + Tailwind CSS + Material 3 Design).
+- **`backend/`**: Hệ thống máy chủ REST API (Express + Node.js) và quản trị cơ sở dữ liệu (MySQL / Aiven Cloud + Migrations & Seeds).
 
 ---
 
-## 🏛️ Software Design Patterns Implemented
+## 🏛️ Cấu trúc dự án (Project Architecture)
 
-| Pattern | Implementation File | Role & Responsibility |
-| :--- | :--- | :--- |
-| **Facade Pattern** | `src/services/orderProcessingFacade.ts` | Orchestrates order placement, stock verification, pricing strategy resolution, status transitions, inventory deductions, and event broadcasting. |
-| **Strategy Pattern** | `src/strategies/pricing/pricingStrategy.ts` | Calculates pricing & discounts: `StandardPricingStrategy`, `VipDiscountStrategy` (5% loyalty discount), `BulkDiscountStrategy` (7% discount on ≥5 items), and repair fee structures. |
-| **State Pattern** | `src/domain/stateMachines/orderStateMachine.ts` & `repairStateMachine.ts` | Strictly validates and transitions entity lifecycles. Prevents unauthorized state transitions and locks completed/cancelled orders (BR.05, BR.07). |
-| **Observer Pattern** | `src/services/eventBus.ts` & `notificationService.ts` | Decoupled publish-subscribe event bus broadcasting order, stock, and repair events to the reactive Notification Center. |
-| **Factory Method** | `src/factories/orderFactory.ts` & `repairTicketFactory.ts` | Deterministic generation of relational order line-items and repair tickets with sequential human-readable identifiers (`ORD-2026-XXXX`, `RPR-2026-XXXX`). |
-
----
-
-## 🛡️ Business Rules Engine (BR.01 – BR.08 & BR.10)
-
-All 26 automated unit tests pass with 100% coverage (`test-business-rules.ts`):
-- **BR.01**: Orders require a registered customer profile and ≥1 valid item with positive integer quantities.
-- **BR.02**: Requested order or part quantities cannot exceed available inventory (`Available = OnHand - Reserved`).
-- **BR.03**: Physical on-hand stock cannot fall below reserved stock (`quantityOnHand >= quantityReserved`).
-- **BR.04**: Every stock modification generates an immutable inventory transaction with actor, timestamp, and audit reason.
-- **BR.05**: Completed and Cancelled orders are strictly immutable and locked.
-- **BR.06**: Hardware repair tickets require a registered customer, valid serial number, and diagnostic issue description.
-- **BR.07**: Invalid state transitions are rejected by the state machine.
-- **BR.08**: Spare parts cannot be issued to a repair ticket unless available warehouse stock is verified.
-- **BR.10**: Operations revenue aggregates exclusively from Completed orders.
-
----
-
-## 💾 Relational Data Model (9 Entities)
-
-Persisted in browser `localStorage` under `computertech_db_v2`:
-1. `users`: Multi-tenant staff roles (`admin`, `sales`, `inventory_manager`, `technician`).
-2. `customers`: Client profiles with tiers (`standard`, `vip`).
-3. `products`: Hardware catalog with specifications, SKUs, warranty months, VND prices, and safety thresholds.
-4. `inventory`: On-hand and reserved quantities per warehouse location with derived `quantityAvailable`.
-5. `orders`: Relational sales orders with pricing strategy tracking and payment methods.
-6. `order_items`: Line items with SKU, unit price, quantity, and subtotal.
-7. `inventory_transactions`: Complete audit ledger of all stock receipts, issues, adjustments, reservations, and releases.
-8. `repair_tickets`: Lab diagnostic tickets with device name, serial number, labor fee, and parts consumed.
-9. `repair_histories`: Chronological diagnostic telemetry and status progression logs.
+```
+banhang/
+├── frontend/                     # Phân hệ Giao diện người dùng (Frontend)
+│   ├── src/                      # Toàn bộ mã nguồn React + TypeScript
+│   ├── index.html                # Trang khởi đầu Vite
+│   ├── vite.config.ts            # Cấu hình Vite
+│   ├── tsconfig.json             # Cấu hình TypeScript
+│   ├── tailwind.config.js        # Cấu hình Tailwind CSS
+│   ├── postcss.config.js         # Cấu hình PostCSS
+│   ├── package.json              # Quản lý thư viện Frontend
+│   ├── test-business-rules.mjs   # Bộ kiểm thử quy tắc nghiệp vụ
+│   ├── test-e2e-browser.mjs      # Bộ kiểm thử E2E giao diện
+│   └── README.md                 # Tài liệu hướng dẫn Frontend
+│
+├── backend/                      # Phân hệ Máy chủ & Dữ liệu (Backend)
+│   ├── src/
+│   │   ├── db.mjs                # Quản lý Connection Pool kết nối MySQL
+│   │   └── server.mjs            # REST API Server Express (Port 5000)
+│   ├── database/                 # Tập tin lược đồ và dữ liệu DDL (.sql)
+│   ├── data/                     # Dữ liệu mẫu (Scraped data)
+│   ├── scripts/                  # Kịch bản migrate, seed, kiểm thử DB
+│   ├── secrets/                  # Chứng chỉ SSL và cấu hình bảo mật
+│   ├── .env                      # Cấu hình kết nối Aiven MySQL
+│   ├── package.json              # Quản lý thư viện Backend
+│   └── README.md                 # Tài liệu hướng dẫn Backend
+│
+├── start.bat                     # Tệp tiện ích khởi chạy nhanh cả hệ thống trên Windows
+├── start.cmd                     # Tệp lệnh tắt
+├── push_to_github.bat            # Tệp tự động hóa commit và đẩy mã nguồn lên GitHub
+├── package.json                  # Cấu hình Workspace gốc điều phối chung
+└── README.md                     # Tài liệu tổng thể dự án
+```
 
 ---
 
-## 🚀 Running the Application
+## 🚀 Hướng dẫn khởi chạy nhanh
 
-### 1. Installation & Start
+### Cách 1: Khởi chạy nhanh bằng `start.bat` (Khuyên dùng trên Windows)
+Chỉ cần nhấp đúp vào tệp **`start.bat`** tại thư mục gốc. Hệ thống sẽ tự động:
+1. Kiểm tra và cài đặt các thư viện cần thiết cho cả `frontend` và `backend`.
+2. Khởi chạy **Backend API Server** tại `http://localhost:5000`.
+3. Khởi chạy **Frontend Web** tại `http://localhost:5173`.
+4. Tự động mở trình duyệt web đến giao diện chính.
+
+---
+
+### Cách 2: Khởi chạy bằng lệnh từ thư mục gốc
+
 ```bash
-# Cài đặt thư viện dependencies (nếu chưa có)
-npm install
+# 1. Cài đặt toàn bộ thư viện cho cả hai phân hệ
+npm run install:all
 
-# Khởi chạy server phát triển (Development)
+# 2. Chạy đồng thời hoặc riêng biệt:
+# Chạy Frontend:
+npm run dev:frontend
+
+# Chạy Backend API:
+npm run dev:backend
+```
+
+---
+
+### Cách 3: Khởi chạy riêng từng phân hệ
+
+#### 🖥️ Khởi chạy Frontend:
+```bash
+cd frontend
+npm install
 npm run dev
 ```
 Truy cập: [http://localhost:5173](http://localhost:5173)
 
-### 2. Production Build
+#### ⚙️ Khởi chạy Backend:
 ```bash
-# Kiểm tra TypeScript và build production
-npm run build
+cd backend
+npm install
+npm run dev
+```
+API Server: [http://localhost:5000](http://localhost:5000) (Kiểm tra sức khỏe: `http://localhost:5000/api/health`)
 
-# Chạy bản build đã đóng gói
-npm run preview
+---
+
+## 💾 Quản lý Cơ sở dữ liệu (MySQL / Aiven Cloud)
+
+Từ thư mục gốc hoặc thư mục `backend/`:
+
+```bash
+# Kiểm tra kết nối và cấu trúc bảng
+npm run db:inspect
+
+# Tạo các bảng mới (Migration)
+npm run db:migrate
+
+# Nạp dữ liệu mẫu ban đầu (Seed)
+npm run db:seed
+
+# Kiểm tra CRUD thực tế
+npm run db:test
+
+# Tái tạo toàn diện cơ sở dữ liệu
+npm run db:rebuild
 ```
 
-### 3. Tài khoản đăng nhập hệ thống
-- **Khách hàng bán lẻ & VIP** (/login):
-  - ao.gamer@gmail.com / password123 (Phan Quốc Bảo - VIP Gamer, Chiết khấu 5%)
-  - 	hutrang.arch@gmail.com / password123 (Đặng Thu Trang - Standard Designer)
-  - hai.vu@techvision.vn / password123 (Vũ Đức Hải - Đại diện Doanh nghiệp TechVision)
-- **Cổng nhân sự nội bộ** (/company/login):
-  - Admin: dmin@computertech.vn / dmin123 (Nguyễn Minh Kiệt - Quyền quản trị toàn diện)
-  - Sale: sale@computertech.vn / sale123 (Nguyễn Việt Anh - POS & Bán hàng)
-  - Sale 2: huong.le@computertech.vn / sale123 (Lê Thị Mai Hương - CSKH & Tư vấn)
-  - Kho (Warehouse): warehouse@computertech.vn / warehouse123 (Ngô Thành Tâm - Trưởng kho)
-  - Kho 2: dat.vo@computertech.vn / warehouse123 (Võ Thành Đạt - Điều phối kho)
-  - Kỹ thuật viên (Technician): 	ech@computertech.vn / 	ech123 (Trần Hoàng Nam - Phòng Lab & Bảo hành)
+---
 
-### 4. Chạy kiểm thử tự động (Automated Tests)
-```bash
-# Kiểm thử toàn diện 38 kịch bản Browser E2E
-node test-e2e-browser.mjs
+## 🔑 Tài khoản đăng nhập hệ thống
 
-# Kiểm thử 16 kịch bản quy tắc Material 3 & Portals
-node test-material3-portals.mjs
-
-# Kiểm thử 26 kịch bản nghiệp vụ (Business Rules)
-node test-business-rules.mjs
-```
+- **Khách hàng bán lẻ & VIP** (`/login`):
+  - `bao.gamer@gmail.com` / `password123` (Phan Quốc Bảo - VIP Gamer, Chiết khấu 5%)
+  - `thutrang.arch@gmail.com` / `password123` (Đặng Thu Trang - Standard Designer)
+  - `hai.vu@techvision.vn` / `password123` (Vũ Đức Hải - Doanh nghiệp TechVision)
+- **Cổng nhân sự nội bộ** (`/company/login`):
+  - **Quản trị viên (Admin)**: `admin@computertech.vn` / `admin123` (Nguyễn Minh Kiệt - Quyền toàn diện)
+  - **Bán hàng (Sale)**: `sale@computertech.vn` / `sale123` (Nguyễn Việt Anh - POS & Bán lẻ)
+  - **Kho vận (Warehouse)**: `warehouse@computertech.vn` / `warehouse123` (Ngô Thành Tâm - Quản lý kho)
+  - **Kỹ thuật viên (Technician)**: `tech@computertech.vn` / `tech123` (Trần Quang Huy - Bàn sửa chữa & Lab)

@@ -111,12 +111,11 @@ export const CustomerLoginPage: React.FC = () => {
 
     mockDb.saveCustomer({
       id: newCustId,
-      code: `KH-${Date.now().toString().slice(-6)}`,
       name: nameClean,
       email: emailClean,
       phone: regPhone.trim() || '0901234567',
       address: 'TP. Hồ Chí Minh',
-      active: true,
+      tier: 'standard',
       createdAt: new Date().toISOString(),
     });
 

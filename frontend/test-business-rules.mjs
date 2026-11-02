@@ -2,12 +2,12 @@
 // AUTOMATED TEST SUITE: BUSINESS RULES & PATTERN VERIFICATION
 // =======================================================
 
-import { BusinessRulesValidator } from './src/domain/validation/businessRules.js';
-import { OrderStateMachine } from './src/domain/stateMachines/orderStateMachine.js';
-import { RepairStateMachine } from './src/domain/stateMachines/repairStateMachine.js';
-import { PricingCalculator } from './src/strategies/pricing/pricingStrategy.js';
-import { OrderFactory } from './src/factories/orderFactory.js';
-import { RepairTicketFactory } from './src/factories/repairTicketFactory.js';
+import { BusinessRulesValidator } from './src/domain/validation/businessRules.ts';
+import { OrderStateMachine } from './src/domain/stateMachines/orderStateMachine.ts';
+import { RepairStateMachine } from './src/domain/stateMachines/repairStateMachine.ts';
+import { PricingCalculator } from './src/strategies/pricing/pricingStrategy.ts';
+import { OrderFactory } from './src/factories/orderFactory.ts';
+import { RepairTicketFactory } from './src/factories/repairTicketFactory.ts';
 
 let passed = 0;
 let total = 0;
