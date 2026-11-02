@@ -1,23 +1,29 @@
 {
-  "name": "computertech-platform",
+  "name": "computertech-backend",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
+  "main": "src/server.mjs",
   "scripts": {
-    "dev": "npm --prefix frontend run dev",
-    "dev:frontend": "npm --prefix frontend run dev",
-    "dev:backend": "npm --prefix backend run dev",
-    "build": "npm --prefix frontend run build",
-    "preview": "npm --prefix frontend run preview",
-    "install:all": "npm --prefix frontend install && npm --prefix backend install",
-    "db:inspect": "npm --prefix backend run db:inspect",
-    "db:migrate": "npm --prefix backend run db:migrate",
-    "db:seed": "npm --prefix backend run db:seed",
-    "db:test": "npm --prefix backend run db:test",
-    "db:rebuild": "npm --prefix backend run db:rebuild"
+    "start": "node src/server.mjs",
+    "dev": "node --watch src/server.mjs",
+    "db:inspect": "node scripts/inspect-db.mjs",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:seed": "node scripts/seed-db.mjs",
+    "db:test": "node scripts/test-crud.mjs",
+    "db:rebuild": "node scripts/rebuild-database.mjs",
+    "db:sql": "node scripts/run-sql.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^18.0.9",
+    "express": "^4.21.2",
+    "mysql2": "^3.24.6"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0"
   }
 }
