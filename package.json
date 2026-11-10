@@ -7,6 +7,10 @@
   "scripts": {
     "start": "node src/server.mjs",
     "dev": "node --watch src/server.mjs",
+    "frontend": "npm --prefix frontend run dev",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
+    "frontend:install": "npm --prefix frontend install",
     "db:inspect": "node scripts/inspect-db.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "db:seed": "node scripts/seed-db.mjs",

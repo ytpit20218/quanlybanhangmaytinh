@@ -3,7 +3,7 @@ import path from 'path';
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const BASE_URL = 'http://localhost:5173';
-const ARTIFACT_DIR = 'C:\\Users\\Admin\\.gemini\\antigravity\\brain\\67a17320-9668-4558-b72d-80c602f996d5\\screenshots';
+const ARTIFACT_DIR = path.resolve('./screenshots');
 
 async function capture() {
   const browser = await puppeteer.launch({
