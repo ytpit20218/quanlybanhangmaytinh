@@ -4,6 +4,7 @@
 // ==========================================
 
 import React, { useEffect, useState } from 'react';
+import { cleanHtmlText } from '../../domain/textSanitizer';
 import {
   AlertOctagon,
   Boxes,
@@ -41,9 +42,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   }, [product?.id]);
 
   if (!product) return null;
-
-  const cleanText = (val: unknown) =>
-    String(val ?? '').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim();
 
   const inv = inventory[product.id];
   const onHand = inv?.quantityOnHand ?? 0;
@@ -192,9 +190,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-200 text-xs font-mono overflow-hidden shadow-2xs">
                   {Object.entries(product.specs).map(([key, val]) => (
                     <div key={key} className="flex px-3.5 py-2 justify-between items-center hover:bg-slate-50 gap-3">
-                      <span className="text-slate-500 font-medium capitalize">{cleanText(key)}</span>
-                      <span className="text-slate-900 text-right max-w-[65%] truncate font-bold" title={cleanText(val)}>
-                        {cleanText(val)}
+                      <span className="text-slate-500 font-medium capitalize">{cleanHtmlText(key)}</span>
+                      <span className="text-slate-900 text-right max-w-[65%] truncate font-bold" title={cleanHtmlText(val)}>
+                        {cleanHtmlText(val)}
                       </span>
                     </div>
                   ))}

@@ -4,6 +4,7 @@
 // ==========================================
 
 import React, { useState } from 'react';
+import { cleanHtmlText } from '../../domain/textSanitizer';
 import {
   ArrowRight,
   Check,
@@ -146,10 +147,8 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
         {(maxDisplay ? displayProducts.slice(0, maxDisplay) : displayProducts).map((product) => {
           const avail = getAvailable(product.id);
           const topSpecEntries = Object.entries(product.specs)
-            .filter(([_, val]) => {
-              const clean = String(val).replace(/&nbsp;/gi, '').trim();
-              return clean.length > 0;
-            })
+            .map(([k, val]) => [cleanHtmlText(k), cleanHtmlText(val)] as const)
+            .filter(([_, clean]) => clean.length > 0)
             .slice(0, 3);
 
           return (
@@ -217,7 +216,7 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
                         <div key={k} className="flex justify-between truncate">
                           <span className="text-slate-400 shrink-0 mr-1">{k}:</span>
                           <span className="text-[#172033] font-medium truncate">
-                            {String(v).replace(/&nbsp;/gi, ' ').trim()}
+                            {v}
                           </span>
                         </div>
                       ))}

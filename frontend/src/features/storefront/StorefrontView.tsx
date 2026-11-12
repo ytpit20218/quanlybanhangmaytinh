@@ -5,6 +5,7 @@
 // ==========================================
 
 import React, { useEffect, useState } from 'react';
+import { cleanHtmlText } from '../../domain/textSanitizer';
 import {
   ChevronRight,
   Cpu,
@@ -401,7 +402,8 @@ export const StorefrontView: React.FC = () => {
               {filtered.map((product) => {
                 const avail = getAvailable(product.id);
                 const specs = Object.entries(product.specs)
-                  .filter(([_, v]) => String(v).replace(/&nbsp;/gi, '').trim().length > 0)
+                  .map(([k, v]) => [cleanHtmlText(k), cleanHtmlText(v)] as const)
+                  .filter(([_, clean]) => clean.length > 0)
                   .slice(0, 3);
                 return (
                   <div
@@ -457,7 +459,7 @@ export const StorefrontView: React.FC = () => {
                               <div key={k} className="flex justify-between truncate">
                                 <span className="text-slate-400 shrink-0 mr-1">{k}:</span>
                                 <span className="text-[#172033] font-medium truncate">
-                                  {String(v).replace(/&nbsp;/gi, ' ').trim()}
+                                  {v}
                                 </span>
                               </div>
                             ))}
@@ -532,16 +534,17 @@ export const StorefrontView: React.FC = () => {
                       </h3>
 
                       <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                        {product.description}
+                        {cleanHtmlText(product.description)}
                       </p>
 
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-mono text-slate-600 mt-2">
                         {Object.entries(product.specs)
-                          .filter(([_, v]) => String(v).replace(/&nbsp;/gi, '').trim().length > 0)
+                          .map(([k, v]) => [cleanHtmlText(k), cleanHtmlText(v)] as const)
+                          .filter(([_, clean]) => clean.length > 0)
                           .slice(0, 4)
                           .map(([k, v]) => (
                             <span key={k}>
-                              <strong className="text-slate-400">{k}:</strong> {String(v).replace(/&nbsp;/gi, ' ').trim()}
+                              <strong className="text-slate-400">{k}:</strong> {v}
                             </span>
                           ))}
                       </div>
