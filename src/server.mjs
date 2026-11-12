@@ -14,6 +14,17 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ success: false, message: 'Invalid JSON payload' });
+  }
+  next(err);
+});
+
+function sendServerError(res, err) {
+  console.error('[API Error]', err?.message || err);
+  return res.status(500).json({ success: false, message: 'Internal server error' });
+}
 
 // 1. Health check & DB status
 app.get('/api/health', async (req, res) => {
@@ -32,50 +43,67 @@ app.get('/api/categories', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM categories ORDER BY sort_order ASC');
     res.json({ success: true, data: rows });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    sendServerError(res, err);
   }
 });
 
 // 3. Brands
 app.get('/api/brands', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM brands ORDER BY sort_order ASC');
+    const [rows] = await pool.query('SELECT * FROM brands ORDER BY name ASC');
     res.json({ success: true, data: rows });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    sendServerError(res, err);
   }
 });
 
 // 4. Products with filters
 app.get('/api/products', async (req, res) => {
   try {
-    const { category, search, limit = 100, offset = 0 } = req.query;
+    const { category, search, limit = '100', offset = '0' } = req.query;
+    if (!/^\d+$/.test(String(limit)) || !/^\d+$/.test(String(offset))) {
+      return res.status(400).json({ success: false, message: 'limit and offset must be non-negative integers' });
+    }
+    const parsedLimit = Number(limit);
+    const parsedOffset = Number(offset);
+    if (parsedLimit < 1 || parsedLimit > 500) {
+      return res.status(400).json({ success: false, message: 'limit must be between 1 and 500' });
+    }
+
     let query = `
-      SELECT p.*, COALESCE(i.quantity_on_hand, 0) as on_hand, 
+      SELECT p.*,
+             c.slug AS category,
+             c.name AS category_name,
+             b.name AS brand_name,
+             (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC, sort_order ASC LIMIT 1) AS image,
+             COALESCE(i.quantity_on_hand, 0) as on_hand,
              COALESCE(i.quantity_reserved, 0) as reserved,
              (COALESCE(i.quantity_on_hand, 0) - COALESCE(i.quantity_reserved, 0)) as available
       FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN brands b ON p.brand_id = b.id
       LEFT JOIN inventory i ON p.id = i.product_id
       WHERE 1=1
     `;
     const params = [];
 
     if (category) {
-      query += ' AND p.category = ?';
-      params.push(category);
+      const cat = String(category).trim();
+      query += ' AND (p.category_id = ? OR c.slug = ? OR c.parent_id = ?)';
+      params.push(cat, cat, cat);
     }
     if (search) {
       query += ' AND (p.name LIKE ? OR p.sku LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
+      params.push(`%${String(search).trim()}%`, `%${String(search).trim()}%`);
     }
 
     query += ' ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
-    params.push(Number(limit), Number(offset));
+    params.push(parsedLimit, parsedOffset);
 
     const [rows] = await pool.query(query, params);
     res.json({ success: true, total: rows.length, data: rows });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -83,10 +111,17 @@ app.get('/api/products', async (req, res) => {
 app.get('/api/products/:id', async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT p.*, COALESCE(i.quantity_on_hand, 0) as on_hand, 
+      `SELECT p.*,
+              c.slug AS category,
+              c.name AS category_name,
+              b.name AS brand_name,
+              (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY is_primary DESC, sort_order ASC LIMIT 1) AS image,
+              COALESCE(i.quantity_on_hand, 0) as on_hand,
               COALESCE(i.quantity_reserved, 0) as reserved,
               (COALESCE(i.quantity_on_hand, 0) - COALESCE(i.quantity_reserved, 0)) as available
        FROM products p
+       LEFT JOIN categories c ON p.category_id = c.id
+       LEFT JOIN brands b ON p.brand_id = b.id
        LEFT JOIN inventory i ON p.id = i.product_id
        WHERE p.id = ?`,
       [req.params.id]
@@ -96,7 +131,7 @@ app.get('/api/products/:id', async (req, res) => {
     }
     res.json({ success: true, data: rows[0] });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -104,15 +139,17 @@ app.get('/api/products/:id', async (req, res) => {
 app.get('/api/inventory', async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT i.*, p.name as product_name, p.sku, p.category, p.min_stock_alert,
+      SELECT i.*, i.bin_location as location, p.name as product_name, p.sku,
+             COALESCE(c.slug, p.category_id) as category,
              (i.quantity_on_hand - i.quantity_reserved) as quantity_available
       FROM inventory i
       JOIN products p ON i.product_id = p.id
+      LEFT JOIN categories c ON p.category_id = c.id
       ORDER BY quantity_available ASC
     `);
     res.json({ success: true, data: rows });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -122,21 +159,48 @@ app.get('/api/customers', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM customers ORDER BY created_at DESC');
     res.json({ success: true, data: rows });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    sendServerError(res, err);
   }
 });
 
 app.post('/api/customers', async (req, res) => {
   try {
-    const { id, name, email, phone, address, tier = 'standard' } = req.body;
+    const { id, name, email, phone = null, address = null, tier = 'standard' } = req.body || {};
+    const nameClean = typeof name === 'string' ? name.trim() : '';
+    const emailClean = typeof email === 'string' ? email.trim().toLowerCase() : '';
+
+    if (!nameClean || !emailClean || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailClean)) {
+      return res.status(400).json({ success: false, message: 'Valid name and email are required' });
+    }
+    if (!['standard', 'vip'].includes(tier)) {
+      return res.status(400).json({ success: false, message: 'tier must be standard or vip' });
+    }
+
     const customerId = id || `cust_${Date.now()}`;
+    const customerCode = `KH-${Date.now()}`;
+    const phoneClean = typeof phone === 'string' ? phone.trim() || null : null;
+
     await pool.query(
-      'INSERT INTO customers (id, name, email, phone, address, tier) VALUES (?, ?, ?, ?, ?, ?)',
-      [customerId, name, email, phone, address, tier]
+      'INSERT INTO customers (id, customer_code, name, email, phone, tier) VALUES (?, ?, ?, ?, ?, ?)',
+      [customerId, customerCode, nameClean, emailClean, phoneClean, tier]
     );
-    res.status(201).json({ success: true, data: { id: customerId, name, email, phone, address, tier } });
+
+    if (typeof address === 'string' && address.trim()) {
+      await pool.query(
+        'INSERT INTO customer_addresses (id, customer_id, recipient_name, phone, address_line, is_default) VALUES (?, ?, ?, ?, ?, 1)',
+        [`addr_${Date.now()}`, customerId, nameClean, phoneClean || '', address.trim()]
+      );
+    }
+
+    res.status(201).json({
+      success: true,
+      data: { id: customerId, customer_code: customerCode, name: nameClean, email: emailClean, phone: phoneClean, tier },
+    });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    if (err?.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ success: false, message: 'Customer email already exists' });
+    }
+    sendServerError(res, err);
   }
 });
 
@@ -160,19 +224,22 @@ app.get('/api/orders', async (req, res) => {
 
     res.json({ success: true, data: enrichedOrders });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    sendServerError(res, err);
   }
 });
 
 // 9. Auth Login (Users & Staff)
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
+    const { email, password } = req.body || {};
+    const emailClean = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const passwordClean = typeof password === 'string' ? password : '';
+
+    if (!emailClean || !passwordClean) {
       return res.status(400).json({ success: false, message: 'Email and password required' });
     }
 
-    const [rows] = await pool.query('SELECT * FROM users WHERE email = ? AND active = 1', [email]);
+    const [rows] = await pool.query('SELECT * FROM users WHERE email = ? AND active = 1', [emailClean]);
     if (!rows.length) {
       return res.status(401).json({ success: false, message: 'Invalid credentials or account inactive' });
     }
@@ -180,17 +247,20 @@ app.post('/api/auth/login', async (req, res) => {
     const user = rows[0];
     const hash = user.password_hash || user.password || '';
     const isMatch = hash.startsWith('$2')
-      ? await bcrypt.compare(password, hash)
-      : (hash === password || password === 'password123' || password === 'admin123' || password === 'sale123');
+      ? await bcrypt.compare(passwordClean, hash)
+      : Boolean(hash) && hash === passwordClean;
 
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
     const { password: _, password_hash: __, ...userSafe } = user;
+    if (!userSafe.role && userSafe.role_name) {
+      userSafe.role = userSafe.role_name;
+    }
     res.json({ success: true, user: userSafe });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -199,26 +269,30 @@ app.get('/api/stats', async (req, res) => {
   try {
     const [[{ total_products }]] = await pool.query('SELECT COUNT(*) as total_products FROM products');
     const [[{ total_orders }]] = await pool.query('SELECT COUNT(*) as total_orders FROM orders');
-    const [[{ total_revenue }]] = await pool.query("SELECT COALESCE(SUM(total_amount), 0) as total_revenue FROM orders WHERE order_status = 'completed'");
+    const [[{ total_revenue }]] = await pool.query("SELECT COALESCE(SUM(total_amount), 0) as total_revenue FROM orders WHERE status = 'completed'");
     const [[{ low_stock_count }]] = await pool.query(`
       SELECT COUNT(*) as low_stock_count 
       FROM inventory i 
       JOIN products p ON i.product_id = p.id 
-      WHERE (i.quantity_on_hand - i.quantity_reserved) <= p.min_stock_alert
+      WHERE (i.quantity_on_hand - i.quantity_reserved) <= i.min_stock_alert
     `);
 
     res.json({
       success: true,
       data: {
-        totalProducts: total_products,
-        totalOrders: total_orders,
-        totalRevenue: total_revenue,
-        lowStockCount: low_stock_count,
+        totalProducts: Number(total_products),
+        totalOrders: Number(total_orders),
+        totalRevenue: Number(total_revenue),
+        lowStockCount: Number(low_stock_count),
       },
     });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    sendServerError(res, err);
   }
+});
+
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, message: 'API endpoint not found' });
 });
 
 app.listen(PORT, () => {

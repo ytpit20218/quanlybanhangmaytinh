@@ -367,6 +367,12 @@ class MockDatabase {
     this.save();
   }
 
+  removeOrder(orderId: string): void {
+    this.state.orders = this.state.orders.filter((o) => o.id !== orderId);
+    this.state.order_items = this.state.order_items.filter((i) => i.orderId !== orderId);
+    this.save();
+  }
+
   updateOrderStatus(orderId: string, status: Order['status']): void {
     const order = this.state.orders.find((o) => o.id === orderId);
     if (order) {

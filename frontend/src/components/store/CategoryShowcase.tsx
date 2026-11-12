@@ -107,7 +107,7 @@ const CATEGORIES: CategoryItem[] = [
   {
     id: 'cat_keyboard',
     name: 'Bàn phím cơ & Chuột',
-    categoryFilter: 'accessories',
+    categoryFilter: 'gaming_gear',
     icon: <Keyboard className="w-6 h-6" />,
     bgGradient: 'from-teal-50 to-emerald-50/60',
     accent: 'text-teal-600',
@@ -116,7 +116,7 @@ const CATEGORIES: CategoryItem[] = [
   {
     id: 'cat_headphones',
     name: 'Tai nghe & Audio Lab',
-    categoryFilter: 'accessories',
+    categoryFilter: 'gaming_gear',
     icon: <Headphones className="w-6 h-6" />,
     bgGradient: 'from-fuchsia-50 to-purple-50/60',
     accent: 'text-fuchsia-600',
@@ -125,7 +125,7 @@ const CATEGORIES: CategoryItem[] = [
   {
     id: 'cat_network',
     name: 'Thiết bị mạng Wi-Fi 7',
-    categoryFilter: 'pc_parts',
+    categoryFilter: 'networking',
     icon: <Network className="w-6 h-6" />,
     bgGradient: 'from-blue-50 to-cyan-50/60',
     accent: 'text-blue-600',

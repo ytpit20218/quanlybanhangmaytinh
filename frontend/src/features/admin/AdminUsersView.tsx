@@ -33,8 +33,9 @@ export const AdminUsersView: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState<UserRole>('sale');
-  const [newPassword, setNewPassword] = useState('password123');
+  const [newPassword, setNewPassword] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [actionBanner, setActionBanner] = useState<string | null>(null);
 
   const filteredUsers = users.filter((u) => {
     if (u.role === 'customer') return false;
@@ -47,8 +48,9 @@ export const AdminUsersView: React.FC = () => {
   });
 
   const handleToggleStatus = (targetUser: User) => {
+    setActionBanner(null);
     if (targetUser.id === currentAdmin?.id) {
-      alert('Cannot suspend your own active administrator account.');
+      setActionBanner('Cannot suspend your own active administrator account.');
       return;
     }
 
@@ -60,8 +62,13 @@ export const AdminUsersView: React.FC = () => {
     e.preventDefault();
     setFormError(null);
 
-    if (!newName.trim() || !newEmail.trim()) {
+    if (!newName.trim() || !newEmail.trim() || !newPassword.trim()) {
       setFormError('All fields are required.');
+      return;
+    }
+
+    if (newPassword.trim().length < 6) {
+      setFormError('Initial password must be at least 6 characters.');
       return;
     }
 
@@ -75,7 +82,7 @@ export const AdminUsersView: React.FC = () => {
       id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       name: newName.trim(),
       email: newEmail.trim().toLowerCase(),
-      password: newPassword,
+      password: newPassword.trim(),
       role: newRole,
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
       active: true,
@@ -86,6 +93,7 @@ export const AdminUsersView: React.FC = () => {
     setIsAddUserOpen(false);
     setNewName('');
     setNewEmail('');
+    setNewPassword('');
   };
 
   return (
@@ -113,6 +121,19 @@ export const AdminUsersView: React.FC = () => {
           <span>Provision New Account</span>
         </button>
       </div>
+
+      {actionBanner && (
+        <div className="mt-4 bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-lg flex items-center justify-between text-xs shadow-sm">
+          <span className="font-medium">{actionBanner}</span>
+          <button
+            type="button"
+            onClick={() => setActionBanner(null)}
+            className="ml-4 font-semibold text-rose-700 hover:text-rose-900"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Filter Toolbar */}
       <div className="mt-6 bg-white p-4 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-4 shadow-sm">

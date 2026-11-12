@@ -2,7 +2,7 @@
 // COMMERCIAL POINT-OF-SALE & ORDER LIFECYCLE
 // ==========================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AlertCircle,
   Barcode,
@@ -64,6 +64,14 @@ export const PosView: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<Order['status'] | 'all'>('all');
   const [actionError, setActionError] = useState<string | null>(null);
   const [selectedOrderForModal, setSelectedOrderForModal] = useState<Order | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [cancelReasonInput, setCancelReasonInput] = useState('');
+
+  useEffect(() => {
+    if (!selectedCustomerId && customers.length > 0) {
+      setSelectedCustomerId(customers[0].id);
+    }
+  }, [customers, selectedCustomerId]);
 
   const fallbackGuestCustomer: Customer = {
     id: 'cust_walkin',
@@ -208,8 +216,11 @@ export const PosView: React.FC = () => {
   const categories: Array<{ id: ProductCategory | 'all'; label: string }> = [
     { id: 'all', label: 'Tất cả danh mục' },
     { id: 'laptops', label: 'Laptops & Máy trạm' },
+    { id: 'pc_gaming', label: 'PC Gaming' },
     { id: 'pc_parts', label: 'Linh kiện PC' },
     { id: 'displays', label: 'Màn hình' },
+    { id: 'gaming_gear', label: 'Gaming Gear' },
+    { id: 'networking', label: 'Thiết bị mạng' },
     { id: 'accessories', label: 'Phụ kiện' },
   ];
 
@@ -252,10 +263,10 @@ export const PosView: React.FC = () => {
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 self-start md:self-auto text-xs">
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 self-start md:self-auto text-xs max-w-full">
             <button
               onClick={() => setActiveTab('counter')}
-              className={`px-4 py-2 font-semibold rounded-md transition flex items-center space-x-2 ${
+              className={`px-3 sm:px-4 py-2 font-semibold rounded-md transition flex items-center space-x-2 ${
                 activeTab === 'counter'
                   ? 'bg-white text-blue-600 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
@@ -310,11 +321,11 @@ export const PosView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto min-w-0">
                 <select
                   value={selectedCustomerId}
                   onChange={(e) => setSelectedCustomerId(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full sm:w-auto max-w-full min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -748,8 +759,8 @@ export const PosView: React.FC = () => {
                               {(o.status === 'pending' || o.status === 'confirmed') && (
                                 <button
                                   onClick={() => {
-                                    const r = prompt('Lý do hủy đơn hàng:');
-                                    if (r) handleTransition(o.id, 'cancelled', r);
+                                    setCancelReasonInput('');
+                                    setCancellingOrderId(o.id);
                                   }}
                                   className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-medium border border-rose-200 transition"
                                 >
@@ -833,6 +844,51 @@ export const PosView: React.FC = () => {
                 className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg border border-slate-200"
               >
                 Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Inline Cancel Order Modal */}
+      {cancellingOrderId && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl border border-slate-200 max-w-md w-full p-5 shadow-2xl space-y-4">
+            <h3 className="font-bold text-slate-800 text-sm">Xác nhận hủy đơn hàng</h3>
+            <p className="text-xs text-slate-500">
+              Vui lòng nhập lý do hủy đơn (tồn kho đã giữ sẽ được hoàn trả tự động).
+            </p>
+            <textarea
+              rows={3}
+              value={cancelReasonInput}
+              onChange={(e) => setCancelReasonInput(e.target.value)}
+              placeholder="Ví dụ: Khách hàng đổi ý / hết hàng..."
+              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+            />
+            <div className="flex justify-end gap-2 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => {
+                  setCancellingOrderId(null);
+                  setCancelReasonInput('');
+                }}
+                className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg border border-slate-200 hover:bg-slate-200 transition"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                disabled={!cancelReasonInput.trim()}
+                onClick={() => {
+                  const id = cancellingOrderId;
+                  const reason = cancelReasonInput.trim();
+                  setCancellingOrderId(null);
+                  setCancelReasonInput('');
+                  handleTransition(id, 'cancelled', reason);
+                }}
+                className="px-3 py-1.5 bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Xác nhận hủy
               </button>
             </div>
           </div>

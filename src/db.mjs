@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import bcrypt from 'bcryptjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -94,8 +95,7 @@ class LocalMockDatabase {
         id: 'usr_staff_admin',
         name: 'Nguyễn Minh Kiệt',
         email: 'admin@computertech.vn',
-        password: 'admin123',
-        password_hash: '$2a$10$wT8vS7Pz8i1c5o9y3q2w7e.Z1h3K7L9vB3d5f7g9h1j3k5l7m9n1o',
+        password_hash: bcrypt.hashSync(process.env.MOCK_ADMIN_PASSWORD || 'admin123', 8),
         role: 'admin',
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
         active: 1,
@@ -105,8 +105,7 @@ class LocalMockDatabase {
         id: 'usr_staff_sale',
         name: 'Nguyễn Việt Anh',
         email: 'sale@computertech.vn',
-        password: 'sale123',
-        password_hash: '$2a$10$wT8vS7Pz8i1c5o9y3q2w7e.Z1h3K7L9vB3d5f7g9h1j3k5l7m9n1o',
+        password_hash: bcrypt.hashSync(process.env.MOCK_SALE_PASSWORD || 'sale123', 8),
         role: 'sale',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
         active: 1,
@@ -116,8 +115,7 @@ class LocalMockDatabase {
         id: 'usr_staff_warehouse',
         name: 'Ngô Thành Tâm',
         email: 'warehouse@computertech.vn',
-        password: 'warehouse123',
-        password_hash: '$2a$10$wT8vS7Pz8i1c5o9y3q2w7e.Z1h3K7L9vB3d5f7g9h1j3k5l7m9n1o',
+        password_hash: bcrypt.hashSync(process.env.MOCK_WAREHOUSE_PASSWORD || 'warehouse123', 8),
         role: 'warehouse',
         avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
         active: 1,
@@ -127,8 +125,7 @@ class LocalMockDatabase {
         id: 'usr_staff_tech',
         name: 'Trần Kỹ Thuật',
         email: 'tech@computertech.vn',
-        password: 'tech123',
-        password_hash: '$2a$10$wT8vS7Pz8i1c5o9y3q2w7e.Z1h3K7L9vB3d5f7g9h1j3k5l7m9n1o',
+        password_hash: bcrypt.hashSync(process.env.MOCK_TECH_PASSWORD || 'tech123', 8),
         role: 'technician',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
         active: 1,
@@ -138,8 +135,7 @@ class LocalMockDatabase {
         id: 'usr_cust_01',
         name: 'Trần Văn An',
         email: 'customer@gmail.com',
-        password: 'password123',
-        password_hash: '$2a$10$wT8vS7Pz8i1c5o9y3q2w7e.Z1h3K7L9vB3d5f7g9h1j3k5l7m9n1o',
+        password_hash: bcrypt.hashSync(process.env.MOCK_CUSTOMER_PASSWORD || 'password123', 8),
         role: 'customer',
         customer_id: 'cust_01',
         avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
@@ -269,7 +265,16 @@ class LocalMockDatabase {
       let result = [...this.products];
       let pIdx = 0;
 
-      if (query.includes('p.category = ?')) {
+      if (query.includes('c.slug = ?')) {
+        const cat = String(params[pIdx++] || '').toLowerCase();
+        // Skip remaining category OR parameters (p.category_id = ? OR c.slug = ? OR c.parent_id = ?)
+        if (query.includes('p.category_id = ?')) pIdx++;
+        if (query.includes('c.parent_id = ?')) pIdx++;
+        result = result.filter((p) => {
+          const pc = String(p.category || '').toLowerCase();
+          return pc === cat || `cat_${pc}` === cat || (cat === 'cat_linh-kien' && ['cpu', 'mainboard', 'ram', 'ssd-hdd', 'vga', 'psu', 'case', 'cooling'].includes(pc));
+        });
+      } else if (query.includes('p.category = ?')) {
         const cat = params[pIdx++];
         result = result.filter(
           (p) => p.category?.toLowerCase() === cat?.toLowerCase()
@@ -320,18 +325,36 @@ class LocalMockDatabase {
 
     // 7. Customers
     if (q.includes('INSERT INTO CUSTOMERS')) {
-      const [id, name, email, phone, address, tier] = params;
+      const [id, customer_code, name, email, phone, tier] = params;
+      if (this.customers.some((c) => c.email.toLowerCase() === String(email || '').toLowerCase())) {
+        const dupErr = new Error('Duplicate email entry');
+        dupErr.code = 'ER_DUP_ENTRY';
+        throw dupErr;
+      }
       const newCust = {
         id,
+        customer_code,
         name,
         email,
-        phone,
-        address,
-        tier,
+        phone: phone || null,
+        tier: tier || 'standard',
         created_at: new Date().toISOString(),
       };
       this.customers.unshift(newCust);
       return [{ affectedRows: 1 }, []];
+    }
+
+    if (q.includes('INSERT INTO CUSTOMER_ADDRESSES')) {
+      const [, customerId, , , addressLine] = params;
+      const target = this.customers.find((c) => c.id === customerId);
+      if (target && addressLine) target.address = addressLine;
+      return [{ affectedRows: 1 }, []];
+    }
+
+    if (q.includes('FROM CUSTOMERS WHERE EMAIL = ?')) {
+      const email = String(params[0] || '').toLowerCase();
+      const found = this.customers.filter((c) => c.email?.toLowerCase() === email);
+      return [found, []];
     }
 
     if (q.includes('FROM CUSTOMERS')) {
@@ -344,7 +367,10 @@ class LocalMockDatabase {
         return [[{ total_orders: this.orders.length }], []];
       }
       if (q.includes('SUM(TOTAL_AMOUNT)')) {
-        const rev = this.orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+        const completedOnly = q.includes("STATUS = 'COMPLETED'");
+        const rev = this.orders
+          .filter((o) => !completedOnly || (o.status || o.order_status) === 'completed')
+          .reduce((sum, o) => sum + (o.total_amount || 0), 0);
         return [[{ total_revenue: rev }], []];
       }
       return [this.orders, []];
@@ -374,16 +400,40 @@ class LocalMockDatabase {
 
 const mockDb = new LocalMockDatabase();
 
+const CONNECTION_ERROR_CODES = new Set([
+  'ECONNREFUSED',
+  'ENOTFOUND',
+  'ETIMEDOUT',
+  'ECONNRESET',
+  'EAI_AGAIN',
+  'PROTOCOL_CONNECTION_LOST',
+  'ER_ACCESS_DENIED_ERROR',
+]);
+
+let initConnectionPromise = null;
+function ensureInitialCheck() {
+  if (!initConnectionPromise) {
+    initConnectionPromise = checkConnection();
+  }
+  return initConnectionPromise;
+}
+
 // =====================================================================
-// WRAPPER POOL (MySQL hoặc Mock fallback)
+// WRAPPER POOL (MySQL hoặc Mock fallback chỉ khi mất kết nối)
 // =====================================================================
 export const pool = {
   async query(query, params = []) {
+    await ensureInitialCheck();
     if (isRealDbConnected && mysqlPool) {
       try {
         return await mysqlPool.query(query, params);
       } catch (err) {
-        console.warn(`[MySQL Error] Fallback sang Mock DB: ${err.message}`);
+        if (CONNECTION_ERROR_CODES.has(err?.code) || err?.fatal === true) {
+          isRealDbConnected = false;
+          console.warn(`[MySQL Connection Lost] Fallback sang Mock DB: ${err.message}`);
+          return mockDb.handleQuery(query, params);
+        }
+        throw err;
       }
     }
     return mockDb.handleQuery(query, params);

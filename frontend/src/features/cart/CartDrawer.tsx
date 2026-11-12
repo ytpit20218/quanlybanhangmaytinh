@@ -2,7 +2,7 @@
 // CART & CHECKOUT TASK DRAWER
 // ==========================================
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertCircle,
   ArrowRight,
@@ -48,6 +48,15 @@ export const CartDrawer: React.FC = () => {
       : customers[0]?.id || ''
   );
 
+  // Sync checkout customer identity whenever authenticated user or customer directory updates
+  useEffect(() => {
+    if (currentUser.role === 'customer' && currentUser.customerId) {
+      setSelectedCustomerId(currentUser.customerId);
+    } else if (!selectedCustomerId && customers.length > 0) {
+      setSelectedCustomerId(customers[0].id);
+    }
+  }, [currentUser.id, currentUser.role, currentUser.customerId, customers, selectedCustomerId]);
+
   // Guest checkout form state
   const [guestName, setGuestName] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
@@ -65,7 +74,9 @@ export const CartDrawer: React.FC = () => {
   if (!isCartOpen) return null;
 
   const selectedCustomer = !isGuest
-    ? customers.find((c) => c.id === selectedCustomerId) || customers[0]
+    ? currentUser.role === 'customer' && currentUser.customerId
+      ? customers.find((c) => c.id === currentUser.customerId)
+      : customers.find((c) => c.id === selectedCustomerId) || customers[0]
     : undefined;
 
   // Live pricing computation using Strategy Pattern
@@ -96,6 +107,10 @@ export const CartDrawer: React.FC = () => {
       }
       if (!guestPhone.trim() || guestPhone.trim().length < 8) {
         setErrorMessage('Vui lòng nhập Số điện thoại hợp lệ để giao hàng.');
+        return;
+      }
+      if (guestEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
+        setErrorMessage('Địa chỉ email nhận mã đơn không hợp lệ.');
         return;
       }
 
@@ -365,7 +380,10 @@ export const CartDrawer: React.FC = () => {
                       <div className="p-2.5 bg-white border border-slate-200 rounded-lg text-xs">
                         <div className="font-bold text-slate-900">{selectedCustomer?.name}</div>
                         <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-                          {selectedCustomer?.phone} • {selectedCustomer?.tier.toUpperCase()} Member (5% VIP Discount Applied)
+                          {selectedCustomer?.phone} •{' '}
+                          {selectedCustomer?.tier === 'vip'
+                            ? 'VIP Member (Ưu đãi 5% thành viên VIP)'
+                            : 'Standard Member (Thành viên tiêu chuẩn)'}
                         </div>
                         <div className="text-[11px] text-slate-500 truncate mt-0.5">
                           {selectedCustomer?.address}

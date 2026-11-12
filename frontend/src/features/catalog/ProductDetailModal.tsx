@@ -3,7 +3,7 @@
 // Real-world Computer Retail Hardware Dossier
 // ==========================================
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertOctagon,
   Boxes,
@@ -33,8 +33,17 @@ interface ProductDetailModalProps {
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClose }) => {
   const { inventory, addToCart, setIsCartOpen, products } = useApp();
   const [purchaseQty, setPurchaseQty] = useState(1);
+  const [cartError, setCartError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPurchaseQty(1);
+    setCartError(null);
+  }, [product?.id]);
 
   if (!product) return null;
+
+  const cleanText = (val: unknown) =>
+    String(val ?? '').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim();
 
   const inv = inventory[product.id];
   const onHand = inv?.quantityOnHand ?? 0;
@@ -46,17 +55,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 
   const handleBuyNow = () => {
+    setCartError(null);
     const res = addToCart(product, purchaseQty);
     if (res.success) {
       onClose();
       setIsCartOpen(true);
+    } else if (res.error) {
+      setCartError(res.error);
     }
   };
 
   const handleAddToCart = () => {
+    setCartError(null);
     const res = addToCart(product, purchaseQty);
     if (res.success) {
       setIsCartOpen(true);
+    } else if (res.error) {
+      setCartError(res.error);
     }
   };
 
@@ -176,9 +191,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 </div>
                 <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-200 text-xs font-mono overflow-hidden shadow-2xs">
                   {Object.entries(product.specs).map(([key, val]) => (
-                    <div key={key} className="flex px-3.5 py-2 justify-between items-center hover:bg-slate-50">
-                      <span className="text-slate-500 font-medium capitalize">{key}</span>
-                      <span className="text-slate-900 text-right max-w-[65%] truncate font-bold">{val}</span>
+                    <div key={key} className="flex px-3.5 py-2 justify-between items-center hover:bg-slate-50 gap-3">
+                      <span className="text-slate-500 font-medium capitalize">{cleanText(key)}</span>
+                      <span className="text-slate-900 text-right max-w-[65%] truncate font-bold" title={cleanText(val)}>
+                        {cleanText(val)}
+                      </span>
                     </div>
                   ))}
                   <div className="flex px-3.5 py-2 justify-between items-center bg-slate-50/50">
@@ -218,6 +235,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
             {/* Quantity Stepper & Procurement Actions */}
             <div className="pt-4 border-t border-slate-200 space-y-3">
+              {cartError && (
+                <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                  {cartError}
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <div className="text-xs text-slate-600 font-medium">Chọn số lượng:</div>
                 <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-lg border border-slate-200">

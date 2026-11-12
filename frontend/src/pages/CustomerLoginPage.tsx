@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/AuthContext';
+import { useApp } from '../state/AppContext';
 import { mockDb } from '../services/mockDatabase';
 import { M3Button } from '../components/m3/M3Button';
 import { M3TextField } from '../components/m3/M3TextField';
@@ -31,11 +32,12 @@ import { M3Card } from '../components/m3/M3Card';
 
 export const CustomerLoginPage: React.FC = () => {
   const { user, isAuthenticated, login, getDefaultRoute } = useAuth();
+  const { refreshData } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
 
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('password123');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,37 +93,71 @@ export const CustomerLoginPage: React.FC = () => {
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regEmail || !regName) return;
+    setErrorMessage(null);
+    setRegSuccess(false);
 
     const emailClean = regEmail.trim().toLowerCase();
     const nameClean = regName.trim();
-    const newUserId = `usr_cust_${Date.now()}`;
-    const newCustId = `cust_${Date.now()}`;
+    const phoneClean = regPhone.trim();
+    const passwordClean = regPassword.trim();
 
-    // Persist real customer account to database
-    mockDb.saveUser({
-      id: newUserId,
-      name: nameClean,
-      email: emailClean,
-      password: regPassword || 'password123',
-      role: 'customer',
-      active: true,
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-    });
+    if (!nameClean || nameClean.length < 2) {
+      setErrorMessage('Vui lòng nhập họ và tên hợp lệ (ít nhất 2 ký tự).');
+      return;
+    }
+    if (!emailClean || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailClean)) {
+      setErrorMessage('Vui lòng nhập địa chỉ email hợp lệ.');
+      return;
+    }
+    if (!phoneClean || phoneClean.replace(/\D/g, '').length < 9) {
+      setErrorMessage('Vui lòng nhập số điện thoại hợp lệ (ít nhất 9 chữ số).');
+      return;
+    }
+    if (!passwordClean || passwordClean.length < 6) {
+      setErrorMessage('Mật khẩu phải có ít nhất 6 ký tự.');
+      return;
+    }
+
+    const existingUser = mockDb.getUserByEmail(emailClean);
+    const existingCustomer = mockDb
+      .getCustomers()
+      .find((c) => c.email.toLowerCase() === emailClean);
+    if (existingUser || existingCustomer) {
+      setErrorMessage('Email này đã được đăng ký. Vui lòng sử dụng email khác hoặc đăng nhập.');
+      return;
+    }
+
+    const stamp = Date.now();
+    const newUserId = `usr_cust_${stamp}`;
+    const newCustId = `cust_${stamp}`;
 
     mockDb.saveCustomer({
       id: newCustId,
       name: nameClean,
       email: emailClean,
-      phone: regPhone.trim() || '0901234567',
+      phone: phoneClean,
       address: 'TP. Hồ Chí Minh',
       tier: 'standard',
       createdAt: new Date().toISOString(),
     });
 
+    mockDb.saveUser({
+      id: newUserId,
+      customerId: newCustId,
+      name: nameClean,
+      email: emailClean,
+      phone: phoneClean,
+      password: passwordClean,
+      role: 'customer',
+      active: true,
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+    });
+
+    refreshData();
     setRegSuccess(true);
     setEmail(emailClean);
-    setPassword(regPassword || 'password123');
+    setPassword('');
+    setRegPassword('');
     setActiveTab('signin');
   };
 
@@ -142,6 +178,13 @@ export const CustomerLoginPage: React.FC = () => {
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại Cửa hàng</span>
+        </Link>
+        <Link
+          to="/company/login"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-m3-primary transition"
+        >
+          <Building2 className="w-3.5 h-3.5" />
+          <span>Cổng Nhân viên</span>
         </Link>
       </header>
 
@@ -165,7 +208,10 @@ export const CustomerLoginPage: React.FC = () => {
           <div className="grid grid-cols-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/90 mb-6 shadow-inner">
             <button
               type="button"
-              onClick={() => setActiveTab('signin')}
+              onClick={() => {
+                setErrorMessage(null);
+                setActiveTab('signin');
+              }}
               className={`py-2 px-3 text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${
                 activeTab === 'signin'
                   ? 'bg-[#14213D] text-white shadow-md shadow-[#14213D]/25 ring-1 ring-[#14213D]'
@@ -177,7 +223,11 @@ export const CustomerLoginPage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('register')}
+              onClick={() => {
+                setErrorMessage(null);
+                setRegSuccess(false);
+                setActiveTab('register');
+              }}
               className={`py-2 px-3 text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${
                 activeTab === 'register'
                   ? 'bg-[#14213D] text-white shadow-md shadow-[#14213D]/25 ring-1 ring-[#14213D]'
@@ -188,6 +238,13 @@ export const CustomerLoginPage: React.FC = () => {
               <span>Đăng ký tài khoản</span>
             </button>
           </div>
+
+          {regSuccess && activeTab === 'signin' && (
+            <div className="mb-5 p-3 bg-emerald-50 text-emerald-800 rounded-m3-sm text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Đăng ký thành công! Vui lòng nhập mật khẩu vừa tạo để đăng nhập.</span>
+            </div>
+          )}
 
           {/* Error Message */}
           {errorMessage && (
@@ -205,7 +262,7 @@ export const CustomerLoginPage: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="vd: tuan@minhstudio.dev"
+                placeholder="vd: bao.gamer@gmail.com hoặc 0903456789"
                 leadingIcon={<Mail className="w-4 h-4" />}
               />
 

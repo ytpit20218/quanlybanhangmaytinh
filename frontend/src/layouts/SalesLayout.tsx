@@ -62,7 +62,7 @@ export const SalesLayout: React.FC = () => {
             </Link>
 
             {/* Sales Navigation (M3 Pill Tabs) */}
-            <nav className="hidden md:flex items-center gap-1 bg-m3-surface-container p-1 rounded-m3-full border border-m3-outline-variant/40 text-xs">
+            <nav className="hidden lg:flex items-center gap-1 bg-m3-surface-container p-1 rounded-m3-full border border-m3-outline-variant/40 text-xs">
               {navLinks.map((link) => (
                 <NavLink
                   key={link.to}
@@ -135,8 +135,8 @@ export const SalesLayout: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation bar */}
-        <div className="md:hidden flex gap-1 px-4 py-2 border-t border-m3-outline-variant/60 overflow-x-auto text-xs bg-m3-surface-container-low">
+        {/* Mobile & Tablet Navigation bar */}
+        <div className="lg:hidden flex gap-1 px-4 py-2 border-t border-m3-outline-variant/60 overflow-x-auto text-xs bg-m3-surface-container-low">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}

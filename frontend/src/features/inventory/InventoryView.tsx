@@ -198,9 +198,12 @@ export const InventoryView: React.FC = () => {
                 >
                   <option value="all">ALL CATEGORIES</option>
                   <option value="laptops">LAPTOPS</option>
+                  <option value="pc_gaming">PC GAMING</option>
                   <option value="pc_parts">PC PARTS</option>
                   <option value="displays">DISPLAYS</option>
+                  <option value="gaming_gear">GAMING GEAR</option>
                   <option value="accessories">ACCESSORIES</option>
+                  <option value="networking">NETWORKING</option>
                 </select>
 
                 <label className="flex items-center space-x-1.5 cursor-pointer text-slate-700 select-none">

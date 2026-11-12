@@ -57,7 +57,7 @@ export const AdminProductsView: React.FC = () => {
             placeholder="Search SKU or Name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-64 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-800 placeholder-slate-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full sm:w-64 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-800 placeholder-slate-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
 
           <select
@@ -67,9 +67,12 @@ export const AdminProductsView: React.FC = () => {
           >
             <option value="all">ALL HARDWARE CATEGORIES</option>
             <option value="laptops">LAPTOPS & WORKSTATIONS</option>
+            <option value="pc_gaming">PC GAMING & GRAPHICS</option>
             <option value="pc_parts">PC PARTS & SILICON</option>
             <option value="displays">DISPLAYS & PANELS</option>
+            <option value="gaming_gear">GAMING GEAR</option>
             <option value="accessories">ACCESSORIES</option>
+            <option value="networking">NETWORKING & CAMERAS</option>
           </select>
         </div>
 

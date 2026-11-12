@@ -2,7 +2,7 @@
 // TECHNICAL REPAIR BENCH & DIAGNOSTIC LAB
 // ==========================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AlertCircle,
   AlertTriangle,
@@ -69,6 +69,24 @@ export const RepairBenchView: React.FC = () => {
   // Transition Note
   const [transitionReason, setTransitionReason] = useState<string>('');
   const [transitionError, setTransitionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if ((!selectedTicketId || !repairTickets.some((t) => t.id === selectedTicketId)) && repairTickets.length > 0) {
+      setSelectedTicketId(repairTickets[0].id);
+    }
+  }, [repairTickets, selectedTicketId]);
+
+  useEffect(() => {
+    if (!intakeCustomerId && customers.length > 0) {
+      setIntakeCustomerId(customers[0].id);
+    }
+  }, [customers, intakeCustomerId]);
+
+  useEffect(() => {
+    if (!selectedPartId && products.length > 0) {
+      setSelectedPartId(products[0].id);
+    }
+  }, [products, selectedPartId]);
 
   const formatVND = (val: number) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);

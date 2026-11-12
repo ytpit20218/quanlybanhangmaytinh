@@ -89,6 +89,7 @@ export class OrderProcessingFacade {
     if (input.autoConfirm) {
       const confirmResult = this.transitionStatus(order.id, 'confirmed', input.actor);
       if (!confirmResult.success) {
+        mockDb.removeOrder(order.id);
         return { success: false, errors: confirmResult.errors };
       }
       return { success: true, order: confirmResult.order, items, errors: [] };
@@ -137,12 +138,17 @@ export class OrderProcessingFacade {
 
     // 1. PENDING -> CONFIRMED: Reserve inventory for all line items
     if (previousStatus === 'pending' && targetStatus === 'confirmed') {
+      const reservedItems: typeof items = [];
       for (const item of items) {
         const reserveRes = InventoryService.reserveStock(item.productId, item.quantity, order.orderNumber, actor);
         if (!reserveRes.success) {
-          // If any reservation fails, abort
+          // Roll back any reservations made earlier in this loop so partial stock stays consistent
+          for (const reserved of reservedItems) {
+            InventoryService.releaseStock(reserved.productId, reserved.quantity, order.orderNumber, actor);
+          }
           return { success: false, errors: [reserveRes.error || 'Failed to reserve stock.'] };
         }
+        reservedItems.push(item);
       }
     }
 

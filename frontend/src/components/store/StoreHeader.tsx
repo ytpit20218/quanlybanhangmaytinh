@@ -4,7 +4,7 @@
 // Row 2: Category Department Bar (Sticky on scroll)
 // ==========================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronDown,
   Cpu,
@@ -25,7 +25,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../state/AuthContext';
 import { useApp } from '../../state/AppContext';
 import { M3Badge } from '../m3/M3Badge';
@@ -40,14 +40,18 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
   selectedCategory,
 }) => {
   const { user, logout, getDefaultRoute } = useAuth();
-  const { cart, setIsCartOpen } = useApp();
+  const { cart, setIsCartOpen, products } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const urlSearch = searchParams.get('search') || '';
 
   const [searchKeyword, setSearchKeyword] = useState(urlSearch);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showPartsDropdown, setShowPartsDropdown] = useState(false);
+  const [dropdownLeft, setDropdownLeft] = useState(16);
+  const navContainerRef = useRef<HTMLDivElement>(null);
+  const partsBtnRef = useRef<HTMLButtonElement>(null);
 
   const cartTotalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -58,20 +62,40 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearchKeyword(val);
+    const nextParams = new URLSearchParams(searchParams);
     if (val.trim()) {
-      navigate(`/store?search=${encodeURIComponent(val.trim())}`, { replace: true });
-    } else {
-      navigate('/store', { replace: true });
+      nextParams.set('search', val.trim());
+      nextParams.delete('q');
+      navigate(`/store?${nextParams.toString()}`, { replace: true });
+    } else if (location.pathname === '/store') {
+      nextParams.delete('search');
+      nextParams.delete('q');
+      const qs = nextParams.toString();
+      navigate(qs ? `/store?${qs}` : '/store', { replace: true });
     }
+  };
+
+  const handleClearSearch = () => {
+    setSearchKeyword('');
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('search');
+    nextParams.delete('q');
+    const qs = nextParams.toString();
+    navigate(qs ? `/store?${qs}` : '/store', { replace: true });
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const nextParams = new URLSearchParams(location.pathname === '/store' ? searchParams : '');
     if (searchKeyword.trim()) {
-      navigate(`/store?search=${encodeURIComponent(searchKeyword.trim())}`);
+      nextParams.set('search', searchKeyword.trim());
+      nextParams.delete('q');
     } else {
-      navigate('/store');
+      nextParams.delete('search');
+      nextParams.delete('q');
     }
+    const qs = nextParams.toString();
+    navigate(qs ? `/store?${qs}` : '/store');
   };
 
   const handleLogout = () => {
@@ -79,17 +103,33 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
     navigate('/store', { replace: true });
   };
 
+  const pcPartsProducts = products.filter((p) => p.category === 'pc_parts');
+  const countSub = (sub: string) =>
+    sub === 'all'
+      ? pcPartsProducts.length
+      : pcPartsProducts.filter((p) => p.subCategory === sub).length;
+
   const COMPONENT_SUBITEMS = [
-    { sub: 'all', label: 'Tất cả Linh Kiện PC', badge: '168 SP' },
-    { sub: 'mainboard', label: 'Mainboard (Bo Mạch Chủ)', badge: '23 SP' },
-    { sub: 'cpu', label: 'CPU (Vi Xử Lý)', badge: '29 SP' },
-    { sub: 'ram', label: 'RAM (Bộ Nhớ Trong)', badge: '27 SP' },
-    { sub: 'vga', label: 'VGA (Card Màn Hình)', badge: '27 SP' },
-    { sub: 'ssd_hdd', label: 'Ổ Cứng SSD & HDD', badge: '17 SP' },
-    { sub: 'psu', label: 'Nguồn Máy Tính (PSU)', badge: '15 SP' },
-    { sub: 'case', label: 'Vỏ Case Máy Tính', badge: '15 SP' },
-    { sub: 'cooling', label: 'Tản Nhiệt (Cooling)', badge: '15 SP' },
+    { sub: 'all', label: 'Tất cả Linh Kiện PC', badge: `${countSub('all')} SP` },
+    { sub: 'mainboard', label: 'Mainboard (Bo Mạch Chủ)', badge: `${countSub('mainboard')} SP` },
+    { sub: 'cpu', label: 'CPU (Vi Xử Lý)', badge: `${countSub('cpu')} SP` },
+    { sub: 'ram', label: 'RAM (Bộ Nhớ Trong)', badge: `${countSub('ram')} SP` },
+    { sub: 'vga', label: 'VGA (Card Màn Hình)', badge: `${countSub('vga')} SP` },
+    { sub: 'ssd_hdd', label: 'Ổ Cứng SSD & HDD', badge: `${countSub('ssd_hdd')} SP` },
+    { sub: 'psu', label: 'Nguồn Máy Tính (PSU)', badge: `${countSub('psu')} SP` },
+    { sub: 'case', label: 'Vỏ Case Máy Tính', badge: `${countSub('case')} SP` },
+    { sub: 'cooling', label: 'Tản Nhiệt (Cooling)', badge: `${countSub('cooling')} SP` },
   ];
+
+  const openPartsMenu = () => {
+    if (partsBtnRef.current && navContainerRef.current) {
+      const btnRect = partsBtnRef.current.getBoundingClientRect();
+      const navRect = navContainerRef.current.getBoundingClientRect();
+      const maxOffset = Math.max(16, navRect.width - 272);
+      setDropdownLeft(Math.min(maxOffset, Math.max(16, btnRect.left - navRect.left)));
+    }
+    setShowPartsDropdown(true);
+  };
 
   const DEPARTMENT_LINKS = [
     { id: 'laptops', label: 'Laptop', icon: <Laptop className="w-3.5 h-3.5" /> },
@@ -137,10 +177,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
               {searchKeyword ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearchKeyword('');
-                    navigate('/store', { replace: true });
-                  }}
+                  onClick={handleClearSearch}
                   className="absolute right-28 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
                   title="Xóa tìm kiếm"
                 >
@@ -273,97 +310,144 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
             )}
           </div>
         </div>
+
+        {/* Mobile Search Bar */}
+        <form onSubmit={handleSearchSubmit} className="pb-2.5 md:hidden">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Tìm laptop, linh kiện, SKU..."
+              value={searchKeyword}
+              onChange={handleSearchChange}
+              className="w-full pl-9 pr-20 py-2 text-xs bg-white text-[#172033] placeholder:text-slate-400 rounded-full border border-transparent focus:border-[#00B8D9] focus:outline-none shadow-sm"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            {searchKeyword && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-16 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+                title="Xóa tìm kiếm"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <button
+              type="submit"
+              className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-1 bg-[#00B8D9] text-white text-[11px] font-bold rounded-full"
+            >
+              Tìm
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* ── ROW 2: DEPARTMENT NAVIGATION BAR (STICKY) ────────────────────── */}
-      <nav className="bg-[#1F2E4D] border-t border-slate-700/60 overflow-visible shadow-inner relative z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1 py-1.5 text-xs font-semibold whitespace-nowrap overflow-x-auto scrollbar-none">
-          {DEPARTMENT_LINKS.map((dept, idx) => {
-            if (dept.hasDropdown) {
-              return (
-                <div
-                  key={`${dept.id}-${idx}`}
-                  className="relative"
-                  onMouseEnter={() => setShowPartsDropdown(true)}
-                  onMouseLeave={() => setShowPartsDropdown(false)}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onCategorySelect) onCategorySelect(dept.id, 'all');
-                      else navigate(`/store?category=${dept.id}`);
-                    }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                      selectedCategory === dept.id
-                        ? 'bg-[#00B8D9] text-white shadow-xs'
-                        : 'text-slate-200 hover:bg-white/10 hover:text-white'
-                    }`}
+      <nav
+        className="bg-[#1F2E4D] border-t border-slate-700/60 overflow-visible shadow-inner relative z-30"
+        onMouseLeave={() => setShowPartsDropdown(false)}
+      >
+        <div ref={navContainerRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="flex items-center gap-1 py-1.5 text-xs font-semibold whitespace-nowrap overflow-x-auto scrollbar-none">
+            {DEPARTMENT_LINKS.map((dept, idx) => {
+              if (dept.hasDropdown) {
+                return (
+                  <div
+                    key={`${dept.id}-${idx}`}
+                    className="relative"
+                    onMouseEnter={openPartsMenu}
                   >
-                    {dept.icon}
-                    <span>{dept.label}</span>
-                    <ChevronDown className={`w-3 h-3 transition-transform ${showPartsDropdown ? 'rotate-180' : ''}`} />
-                  </button>
+                    <button
+                      ref={partsBtnRef}
+                      type="button"
+                      onClick={() => {
+                        setShowPartsDropdown((prev) => {
+                          const next = !prev;
+                          if (next) openPartsMenu();
+                          return next;
+                        });
+                        if (onCategorySelect) onCategorySelect(dept.id, 'all');
+                        else navigate(`/store?category=${dept.id}`);
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+                        selectedCategory === dept.id
+                          ? 'bg-[#00B8D9] text-white shadow-xs'
+                          : 'text-slate-200 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      {dept.icon}
+                      <span>{dept.label}</span>
+                      <ChevronDown className={`w-3 h-3 transition-transform ${showPartsDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+                );
+              }
 
-                  {/* Dropdown Menu for Components */}
-                  {showPartsDropdown && (
-                    <div className="absolute left-0 mt-1 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-2 z-50 text-slate-200">
-                      <div className="text-[10px] uppercase font-bold text-slate-400 px-3 py-1.5 border-b border-slate-800 tracking-wider">
-                        Danh Mục Linh Kiện Máy Tính
-                      </div>
-                      <div className="py-1">
-                        {COMPONENT_SUBITEMS.map((item) => (
-                          <button
-                            key={item.sub}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowPartsDropdown(false);
-                              if (onCategorySelect) {
-                                onCategorySelect('pc_parts', item.sub);
-                              } else {
-                                const q = item.sub === 'all' ? '?category=pc_parts' : `?category=pc_parts&sub=${item.sub}`;
-                                navigate(`/store${q}`);
-                              }
-                            }}
-                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-[#00B8D9] hover:text-white flex items-center justify-between group transition"
-                          >
-                            <span className="font-medium">{item.label}</span>
-                            <span className="text-[10px] font-mono text-slate-400 group-hover:text-white">
-                              {item.badge}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              return (
+                <button
+                  key={`${dept.id}-${idx}`}
+                  type="button"
+                  onClick={() => {
+                    setShowPartsDropdown(false);
+                    if (onCategorySelect) {
+                      onCategorySelect(dept.id);
+                    } else {
+                      navigate(`/store?category=${dept.id}`);
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+                    dept.highlight
+                      ? 'bg-gradient-to-r from-[#FF7043]/20 to-[#FF7043]/10 text-[#FF7043] border border-[#FF7043]/40 font-bold'
+                      : selectedCategory === dept.id
+                      ? 'bg-[#00B8D9] text-white shadow-xs'
+                      : 'text-slate-200 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  {dept.icon}
+                  <span>{dept.label}</span>
+                </button>
               );
-            }
+            })}
+          </div>
 
-            return (
-              <button
-                key={`${dept.id}-${idx}`}
-                type="button"
-                onClick={() => {
-                  if (onCategorySelect) {
-                    onCategorySelect(dept.id);
-                  } else {
-                    navigate(`/store?category=${dept.id}`);
-                  }
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                  dept.highlight
-                    ? 'bg-gradient-to-r from-[#FF7043]/20 to-[#FF7043]/10 text-[#FF7043] border border-[#FF7043]/40 font-bold'
-                    : selectedCategory === dept.id
-                    ? 'bg-[#00B8D9] text-white shadow-xs'
-                    : 'text-slate-200 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                {dept.icon}
-                <span>{dept.label}</span>
-              </button>
-            );
-          })}
+          {/* Dropdown Menu rendered outside overflow-x-auto strip so it is never clipped */}
+          {showPartsDropdown && (
+            <div
+              style={{ left: `${dropdownLeft}px` }}
+              className="absolute top-full pt-1 w-64 z-50"
+              onMouseEnter={() => setShowPartsDropdown(true)}
+            >
+              <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-2 text-slate-200">
+                <div className="text-[10px] uppercase font-bold text-slate-400 px-3 py-1.5 border-b border-slate-800 tracking-wider">
+                  Danh Mục Linh Kiện Máy Tính
+                </div>
+                <div className="py-1">
+                  {COMPONENT_SUBITEMS.map((item) => (
+                    <button
+                      key={item.sub}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowPartsDropdown(false);
+                        if (onCategorySelect) {
+                          onCategorySelect('pc_parts', item.sub);
+                        } else {
+                          const q = item.sub === 'all' ? '?category=pc_parts' : `?category=pc_parts&sub=${item.sub}`;
+                          navigate(`/store${q}`);
+                        }
+                      }}
+                      className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-[#00B8D9] hover:text-white flex items-center justify-between group transition"
+                    >
+                      <span className="font-medium">{item.label}</span>
+                      <span className="text-[10px] font-mono text-slate-400 group-hover:text-white">
+                        {item.badge}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
     </header>

@@ -4,7 +4,7 @@
 // Dedicated dashboard for authenticated retail & VIP buyers
 // ==========================================
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertCircle,
   ArrowRight,
@@ -30,7 +30,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { mockDb } from '../../services/mockDatabase';
 import { useAuth } from '../../state/AuthContext';
 import { useApp } from '../../state/AppContext';
@@ -41,18 +41,50 @@ import { M3Badge } from '../../components/m3/M3Badge';
 import { M3TextField } from '../../components/m3/M3TextField';
 
 export const CustomerAccountView: React.FC = () => {
-  const { user, logout } = useAuth();
-  const { orders, repairTickets } = useApp();
+  const { user, logout, refreshSession } = useAuth();
+  const { orders, repairTickets, refreshData } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'warranty' | 'profile'>('overview');
+  const resolveTabFromPath = (pathname: string): 'overview' | 'orders' | 'warranty' | 'profile' => {
+    if (pathname.endsWith('/orders')) return 'orders';
+    if (pathname.endsWith('/warranty')) return 'warranty';
+    return 'overview';
+  };
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'warranty' | 'profile'>(() =>
+    resolveTabFromPath(location.pathname)
+  );
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  useEffect(() => {
+    const routeTab = resolveTabFromPath(location.pathname);
+    if (location.pathname.endsWith('/orders') || location.pathname.endsWith('/warranty')) {
+      setActiveTab(routeTab);
+    }
+  }, [location.pathname]);
+
+  const customerId = user?.customerId;
+  const customerRecord = customerId ? mockDb.getCustomerById(customerId) : null;
+
+  const [profileName, setProfileName] = useState(customerRecord?.name || user?.name || '');
+  const [profilePhone, setProfilePhone] = useState(customerRecord?.phone || user?.phone || '');
+  const [profileEmail, setProfileEmail] = useState(customerRecord?.email || user?.email || '');
+  const [profileAddress, setProfileAddress] = useState(customerRecord?.address || '');
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setProfileName(customerRecord?.name || user?.name || '');
+    setProfilePhone(customerRecord?.phone || user?.phone || '');
+    setProfileEmail(customerRecord?.email || user?.email || '');
+    setProfileAddress(customerRecord?.address || '');
+  }, [customerRecord?.id, customerRecord?.name, customerRecord?.phone, customerRecord?.email, customerRecord?.address, user?.name, user?.phone, user?.email]);
 
   const formatVND = (amount: number) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 
   // Filter orders strictly by customer ID
-  const customerId = user?.customerId;
   const myOrders = customerId
     ? orders.filter((o) => o.customerId === customerId)
     : [];
@@ -63,10 +95,74 @@ export const CustomerAccountView: React.FC = () => {
     : [];
 
   // Lookup full customer record from DB
-  const customerRecord = customerId ? mockDb.getCustomerById(customerId) : null;
   const isVip = customerRecord?.tier === 'vip';
 
   const selectedItems = selectedOrder ? mockDb.getOrderItems(selectedOrder.id) : [];
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileError(null);
+    setProfileMessage(null);
+
+    const nameClean = profileName.trim();
+    const phoneClean = profilePhone.trim();
+    const emailClean = profileEmail.trim().toLowerCase();
+    const addressClean = profileAddress.trim();
+
+    if (!nameClean || nameClean.length < 2) {
+      setProfileError('Vui lòng nhập họ và tên hợp lệ.');
+      return;
+    }
+    if (!emailClean || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailClean)) {
+      setProfileError('Vui lòng nhập địa chỉ email hợp lệ.');
+      return;
+    }
+    if (phoneClean && phoneClean.replace(/\D/g, '').length < 9) {
+      setProfileError('Số điện thoại phải có ít nhất 9 chữ số.');
+      return;
+    }
+
+    if (user) {
+      const storedUser = mockDb.getUserById(user.id);
+      if (storedUser) {
+        mockDb.saveUser({
+          ...storedUser,
+          name: nameClean,
+          phone: phoneClean || storedUser.phone,
+          email: emailClean,
+        });
+      }
+    }
+
+    if (customerRecord) {
+      mockDb.saveCustomer({
+        ...customerRecord,
+        name: nameClean,
+        phone: phoneClean || customerRecord.phone,
+        email: emailClean,
+        address: addressClean || customerRecord.address,
+      });
+    } else if (user && !user.customerId) {
+      const newCustId = `cust_${Date.now()}`;
+      mockDb.saveCustomer({
+        id: newCustId,
+        name: nameClean,
+        email: emailClean,
+        phone: phoneClean || '0901234567',
+        address: addressClean || 'TP. Hồ Chí Minh',
+        tier: 'standard',
+        createdAt: new Date().toISOString(),
+      });
+      const storedUser = mockDb.getUserById(user.id);
+      if (storedUser) {
+        mockDb.saveUser({ ...storedUser, customerId: newCustId });
+      }
+    }
+
+    refreshData();
+    refreshSession();
+    setProfileMessage('Đã lưu và đồng bộ thông tin hồ sơ thành công!');
+  };
 
   const handleLogout = () => {
     logout();
@@ -419,8 +515,16 @@ export const CustomerAccountView: React.FC = () => {
                             </div>
 
                             <div className="flex items-center gap-2">
+                              <M3Button
+                                variant="outlined"
+                                size="sm"
+                                icon={<Eye className="w-3.5 h-3.5" />}
+                                onClick={() => setSelectedOrder(order)}
+                              >
+                                Chi tiết
+                              </M3Button>
                               <Link to="/store/tracking">
-                                <M3Button variant="tonal" size="sm" icon={<Eye className="w-3.5 h-3.5" />}>
+                                <M3Button variant="tonal" size="sm" icon={<Package className="w-3.5 h-3.5" />}>
                                   Tra cứu tiến trình
                                 </M3Button>
                               </Link>
@@ -508,43 +612,140 @@ export const CustomerAccountView: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <M3TextField
-                    label="Tên khách hàng / Tên doanh nghiệp"
-                    defaultValue={customerRecord?.name || user?.name}
-                    leadingIcon={<User className="w-4 h-4" />}
-                  />
-                  <M3TextField
-                    label="Số điện thoại nhận hàng"
-                    defaultValue={customerRecord?.phone || '0987-654-321'}
-                    leadingIcon={<Phone className="w-4 h-4" />}
-                  />
-                  <M3TextField
-                    label="Địa chỉ Email chính thức"
-                    defaultValue={customerRecord?.email || user?.email}
-                    leadingIcon={<Mail className="w-4 h-4" />}
-                  />
-                  <M3TextField
-                    label="Địa chỉ giao hàng mặc định"
-                    defaultValue={customerRecord?.address || '123 Đường Điện Biên Phủ, Phường 15, Quận Bình Thạnh, TP.HCM'}
-                    leadingIcon={<MapPin className="w-4 h-4" />}
-                  />
-                </div>
+                {profileError && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-m3-sm text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>{profileError}</span>
+                  </div>
+                )}
 
-                <div className="pt-2 text-right">
-                  <M3Button
-                    variant="filled"
-                    size="md"
-                    onClick={() => alert('Đã lưu thông tin hồ sơ thành công!')}
-                  >
-                    Lưu thay đổi hồ sơ
-                  </M3Button>
-                </div>
+                {profileMessage && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-m3-sm text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{profileMessage}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveProfile} className="space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <M3TextField
+                      label="Tên khách hàng / Tên doanh nghiệp"
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      leadingIcon={<User className="w-4 h-4" />}
+                    />
+                    <M3TextField
+                      label="Số điện thoại nhận hàng"
+                      value={profilePhone}
+                      onChange={(e) => setProfilePhone(e.target.value)}
+                      leadingIcon={<Phone className="w-4 h-4" />}
+                    />
+                    <M3TextField
+                      label="Địa chỉ Email chính thức"
+                      type="email"
+                      value={profileEmail}
+                      onChange={(e) => setProfileEmail(e.target.value)}
+                      leadingIcon={<Mail className="w-4 h-4" />}
+                    />
+                    <M3TextField
+                      label="Địa chỉ giao hàng mặc định"
+                      value={profileAddress}
+                      onChange={(e) => setProfileAddress(e.target.value)}
+                      leadingIcon={<MapPin className="w-4 h-4" />}
+                    />
+                  </div>
+
+                  <div className="pt-2 text-right">
+                    <M3Button
+                      type="submit"
+                      variant="filled"
+                      size="md"
+                    >
+                      Lưu thay đổi hồ sơ
+                    </M3Button>
+                  </div>
+                </form>
               </M3Card>
             )}
           </main>
         </div>
       </div>
+
+      {/* ORDER DETAIL MODAL */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white max-w-lg w-full rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-sm text-slate-900">
+                  Chi tiết đơn hàng {selectedOrder.orderNumber || selectedOrder.id}
+                </h3>
+                <p className="text-[11px] font-mono text-slate-500 mt-0.5">
+                  Ngày đặt: {new Date(selectedOrder.createdAt).toLocaleString('vi-VN')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedOrder(null)}
+                className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-600 transition"
+                aria-label="Đóng chi tiết đơn hàng"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Trạng thái:</span>
+                {getOrderStatusBadge(selectedOrder.status)}
+              </div>
+
+              <div className="border border-slate-200 rounded-xl divide-y divide-slate-100">
+                {selectedItems.length === 0 ? (
+                  <div className="p-4 text-center text-slate-400">Không có dòng sản phẩm.</div>
+                ) : (
+                  selectedItems.map((item) => (
+                    <div key={item.id} className="p-3 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-900 truncate">{item.productName}</div>
+                        <div className="text-[11px] text-slate-500 font-mono">
+                          SKU: {item.productSku} • SL: {item.quantity}
+                        </div>
+                      </div>
+                      <div className="font-mono font-bold text-slate-900 shrink-0">
+                        {formatVND(item.subtotal)}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="bg-slate-50 rounded-xl p-3 space-y-1 font-mono text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span>Tạm tính:</span>
+                  <span>{formatVND(selectedOrder.subtotal)}</span>
+                </div>
+                {selectedOrder.discountAmount > 0 && (
+                  <div className="flex justify-between text-emerald-700">
+                    <span>Giảm giá:</span>
+                    <span>-{formatVND(selectedOrder.discountAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-slate-900 text-sm pt-1 border-t border-slate-200">
+                  <span>Tổng thanh toán:</span>
+                  <span>{formatVND(selectedOrder.totalAmount)}</span>
+                </div>
+              </div>
+
+              {selectedOrder.notes && (
+                <div className="text-[11px] text-slate-600 bg-blue-50/60 border border-blue-100 rounded-lg p-2.5">
+                  <strong>Ghi chú:</strong> {selectedOrder.notes}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

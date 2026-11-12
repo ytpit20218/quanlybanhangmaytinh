@@ -5,7 +5,7 @@
 // ==========================================
 
 import React from 'react';
-import { Outlet, useNavigate, useSearchParams } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { StoreHeader } from '../components/store/StoreHeader';
 import { StoreFooter } from '../components/store/StoreFooter';
 import { CartDrawer } from '../features/cart/CartDrawer';
@@ -13,11 +13,19 @@ import { CartDrawer } from '../features/cart/CartDrawer';
 export const StoreLayout: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const currentCategory = searchParams.get('category') || 'all';
 
   const handleCategorySelect = (catId: string, subId?: string) => {
     if (catId === 'promo') {
+      const hasFilters = Boolean(
+        searchParams.get('category') || searchParams.get('sub') || searchParams.get('search') || searchParams.get('q')
+      );
+      if (location.pathname !== '/store' || hasFilters) {
+        navigate('/store#section-promo');
+        return;
+      }
       const el = document.getElementById('section-promo');
       if (el) {
         el.scrollIntoView({ behavior: 'smooth' });
@@ -25,24 +33,26 @@ export const StoreLayout: React.FC = () => {
       return;
     }
 
+    const nextParams = new URLSearchParams(searchParams);
     if (catId === 'all') {
-      searchParams.delete('category');
-      searchParams.delete('sub');
+      nextParams.delete('category');
+      nextParams.delete('sub');
     } else {
-      searchParams.set('category', catId);
+      nextParams.set('category', catId);
       if (subId && subId !== 'all') {
-        searchParams.set('sub', subId);
+        nextParams.set('sub', subId);
       } else {
-        searchParams.delete('sub');
+        nextParams.delete('sub');
       }
     }
-    setSearchParams(searchParams);
 
-    // If not on /store, navigate to /store with category
-    if (!window.location.pathname.startsWith('/store')) {
-      const q = subId && subId !== 'all' ? `?category=${catId}&sub=${subId}` : `?category=${catId}`;
-      navigate(`/store${q}`);
+    if (location.pathname !== '/store') {
+      const qs = nextParams.toString();
+      navigate(qs ? `/store?${qs}` : '/store');
+      return;
     }
+
+    setSearchParams(nextParams);
   };
 
   return (

@@ -23,7 +23,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useApp } from '../../state/AppContext';
 import { Product, ProductCategory } from '../../types';
 import { ProductDetailModal } from '../catalog/ProductDetailModal';
@@ -47,6 +47,7 @@ export const StorefrontView: React.FC = () => {
   } = useApp();
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const urlSearch = searchParams.get('search') || searchParams.get('q') || '';
   const urlCategory = (searchParams.get('category') as ProductCategory) || 'all';
   const urlSub = searchParams.get('sub') || 'all';
@@ -70,6 +71,22 @@ export const StorefrontView: React.FC = () => {
     { id: 'cooling', label: 'Tản nhiệt' },
   ];
 
+  const GEAR_SUBCATEGORIES = [
+    { id: 'all', label: 'Tất cả Gaming Gear' },
+    { id: 'keyboards', label: 'Bàn phím cơ' },
+    { id: 'mice', label: 'Chuột Gaming' },
+    { id: 'headsets', label: 'Tai nghe & Audio' },
+    { id: 'gaming-chairs', label: 'Ghế Gaming' },
+    { id: 'gaming-gear', label: 'Combo & Gear khác' },
+  ];
+
+  const PC_SUBCATEGORIES = [
+    { id: 'all', label: 'Tất cả PC' },
+    { id: 'pc-gaming', label: 'PC Gaming' },
+    { id: 'pc-dong-bo', label: 'PC Đồng bộ' },
+    { id: 'pc-van-phong', label: 'PC Văn phòng' },
+  ];
+
   useEffect(() => {
     if (urlSearch !== searchQuery) setSearchQuery(urlSearch);
   }, [urlSearch]);
@@ -81,6 +98,15 @@ export const StorefrontView: React.FC = () => {
   useEffect(() => {
     if (urlSub !== selectedSubCategory) setSelectedSubCategory(urlSub);
   }, [urlSub]);
+
+  useEffect(() => {
+    if (location.hash === '#section-promo') {
+      const timer = setTimeout(() => {
+        document.getElementById('section-promo')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [location.hash, location.search]);
 
   const formatVND = (val: number) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
@@ -100,7 +126,7 @@ export const StorefrontView: React.FC = () => {
   // Filter products when search or category is active
   let filtered = products.filter((p) => {
     if (selectedCategory !== 'all' && p.category !== selectedCategory) return false;
-    if (selectedCategory === 'pc_parts' && selectedSubCategory !== 'all' && p.subCategory !== selectedSubCategory) return false;
+    if (selectedSubCategory !== 'all' && p.subCategory !== selectedSubCategory) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       if (
@@ -126,20 +152,36 @@ export const StorefrontView: React.FC = () => {
   const handleCategoryClick = (cat: string) => {
     setSelectedCategory(cat as any);
     setSelectedSubCategory('all');
-    searchParams.set('category', cat);
-    searchParams.delete('sub');
-    setSearchParams(searchParams);
-    window.scrollTo({ top: 380, behavior: 'smooth' });
+    const nextParams = new URLSearchParams(searchParams);
+    if (cat === 'all') {
+      nextParams.delete('category');
+    } else {
+      nextParams.set('category', cat);
+    }
+    nextParams.delete('sub');
+    setSearchParams(nextParams);
+    if (cat !== 'all') {
+      window.scrollTo({ top: 380, behavior: 'smooth' });
+    }
   };
 
   const handleSubCategoryClick = (sub: string) => {
     setSelectedSubCategory(sub);
+    const nextParams = new URLSearchParams(searchParams);
     if (sub === 'all') {
-      searchParams.delete('sub');
+      nextParams.delete('sub');
     } else {
-      searchParams.set('sub', sub);
+      nextParams.set('sub', sub);
     }
-    setSearchParams(searchParams);
+    setSearchParams(nextParams);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('search');
+    nextParams.delete('q');
+    setSearchParams(nextParams);
   };
 
   const resetAllFilters = () => {
@@ -156,7 +198,9 @@ export const StorefrontView: React.FC = () => {
   const componentProducts = products.filter((p) => p.category === 'pc_parts');
   const laptopProducts = products.filter((p) => p.category === 'laptops');
   const displayProducts = products.filter((p) => p.category === 'displays');
-  const gearAndAccessoryProducts = products.filter((p) => p.category === 'accessories');
+  const gearAndAccessoryProducts = products.filter(
+    (p) => p.category === 'gaming_gear' || p.category === 'accessories'
+  );
 
   // Curated featured/standout items for homepage (uncluttered, fast showcase)
   const featuredPcGaming = pcGamingProducts.slice(0, 4);
@@ -188,7 +232,7 @@ export const StorefrontView: React.FC = () => {
                 </M3Chip>
               )}
               {searchQuery.trim() && (
-                <M3Chip selected onRemove={() => setSearchQuery('')}>
+                <M3Chip selected onRemove={handleClearSearch}>
                   Từ khóa: "{searchQuery}"
                 </M3Chip>
               )}
@@ -271,21 +315,66 @@ export const StorefrontView: React.FC = () => {
             </div>
           )}
 
-          {/* Banner for PC Gaming */}
-          {selectedCategory === 'pc_gaming' && (
-            <div className="mb-5 p-4 bg-gradient-to-r from-violet-900 to-indigo-900 text-white rounded-xl border border-violet-700/50 shadow-sm flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-violet-600/40 flex items-center justify-center">
-                  <Gamepad2 className="w-6 h-6 text-violet-300" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-sm text-white">Dàn PC Gaming & Cấu Hình Máy Trạm Đồ Họa</h2>
-                  <p className="text-xs text-violet-200">Cấu hình hoàn thiện, kiểm thử tải 24H Full-load, bảo hành trọn bộ tại chỗ</p>
-                </div>
-              </div>
-              <span className="text-xs font-mono font-bold bg-violet-800/80 px-3 py-1 rounded-full border border-violet-500/40">
-                {filtered.length} Cấu hình sẵn hàng
+          {/* Subcategories for Gaming Gear */}
+          {selectedCategory === 'gaming_gear' && (
+            <div className="mb-5 p-3.5 bg-white rounded-xl border border-slate-200/90 shadow-xs flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mr-1">
+                <Zap className="w-4 h-4 text-amber-500" /> Phân loại Gaming Gear:
               </span>
+              {GEAR_SUBCATEGORIES.map((sub) => {
+                const active = selectedSubCategory === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    onClick={() => handleSubCategoryClick(sub.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                      active
+                        ? 'bg-[#00B8D9] text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    {sub.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Banner & Subcategories for PC Gaming */}
+          {selectedCategory === 'pc_gaming' && (
+            <div className="space-y-3 mb-5">
+              <div className="p-4 bg-gradient-to-r from-violet-900 to-indigo-900 text-white rounded-xl border border-violet-700/50 shadow-sm flex flex-wrap gap-3 items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-violet-600/40 flex items-center justify-center shrink-0">
+                    <Gamepad2 className="w-6 h-6 text-violet-300" />
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-sm text-white">Dàn PC Gaming & Cấu Hình Máy Trạm Đồ Họa</h2>
+                    <p className="text-xs text-violet-200">Cấu hình hoàn thiện, kiểm thử tải 24H Full-load, bảo hành trọn bộ tại chỗ</p>
+                  </div>
+                </div>
+                <span className="text-xs font-mono font-bold bg-violet-800/80 px-3 py-1 rounded-full border border-violet-500/40">
+                  {filtered.length} Cấu hình sẵn hàng
+                </span>
+              </div>
+              <div className="p-3 bg-white rounded-xl border border-slate-200/90 shadow-xs flex flex-wrap items-center gap-2">
+                {PC_SUBCATEGORIES.map((sub) => {
+                  const active = selectedSubCategory === sub.id;
+                  return (
+                    <button
+                      key={sub.id}
+                      onClick={() => handleSubCategoryClick(sub.id)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                        active
+                          ? 'bg-[#00B8D9] text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      {sub.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -573,14 +662,14 @@ export const StorefrontView: React.FC = () => {
             title="Gaming Gear & Thiết Bị Ngoại Vi"
             subtitle="Bàn phím cơ Keychron, Chuột gaming Logitech G, Tai nghe HyperX và Phụ kiện"
             icon={<Wrench className="w-5 h-5 text-amber-600" />}
-            categoryTag="accessories"
+            categoryTag="gaming_gear"
             products={featuredGear}
             totalCount={gearAndAccessoryProducts.length}
             maxDisplay={4}
             inventory={inventory}
             onDetail={(p) => setSelectedProductForDetail(p)}
             onAddToCart={handleAddToCart}
-            onViewAll={() => handleCategoryClick('accessories')}
+            onViewAll={() => handleCategoryClick('gaming_gear')}
             accentColor="#D97706"
           />
         </div>

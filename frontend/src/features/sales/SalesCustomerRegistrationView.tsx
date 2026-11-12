@@ -106,8 +106,8 @@ export const SalesCustomerRegistrationView: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-4">
         {/* Search Bar */}
-        <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between gap-4">
-          <div className="relative w-80">
+        <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -143,12 +143,12 @@ export const SalesCustomerRegistrationView: React.FC = () => {
                 </span>
               </div>
 
-              <div className="text-xs text-slate-600 pt-2 border-t border-slate-100 space-y-1">
-                <div className="flex items-center space-x-1.5">
+              <div className="text-xs text-slate-600 pt-2 border-t border-slate-100 space-y-1 min-w-0">
+                <div className="flex items-center space-x-1.5 min-w-0">
                   <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span className="font-mono text-[11px] text-slate-700">{c.email}</span>
+                  <span className="font-mono text-[11px] text-slate-700 truncate">{c.email}</span>
                 </div>
-                <div className="flex items-center space-x-1.5">
+                <div className="flex items-center space-x-1.5 min-w-0">
                   <Building className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span className="text-[11px] text-slate-700 truncate">{c.address}</span>
                 </div>
