@@ -25,16 +25,20 @@ async function testCrud() {
     // 1. WRITE: Customer
     console.log('1. [WRITE] Inserting test Customer...');
     await connection.query(
-      `INSERT INTO customers (id, name, email, phone, address, tier) VALUES (?, ?, ?, ?, ?, ?)`,
-      [testCustomerId, 'Aiven QA Test Customer', `test_${timestamp}@computertech.vn`, '0909123456', '72 Le Thanh Ton, Q1, TP.HCM', 'vip']
+      `INSERT INTO customers (id, customer_code, name, email, phone, tier) VALUES (?, ?, ?, ?, ?, ?)`,
+      [testCustomerId, `KH-TEST-${timestamp}`, 'Aiven QA Test Customer', `test_${timestamp}@computertech.vn`, '0909123456', 'vip']
     );
-    console.log('   ✓ Customer created successfully');
+    await connection.query(
+      `INSERT INTO customer_addresses (id, customer_id, recipient_name, phone, address_line, is_default) VALUES (?, ?, ?, ?, ?, 1)`,
+      [`addr_${timestamp}`, testCustomerId, 'Aiven QA Test Customer', '0909123456', '72 Le Thanh Ton, Q1, TP.HCM']
+    );
+    console.log('   ✓ Customer & Address created successfully');
 
     // 2. WRITE: User
     console.log('2. [WRITE] Inserting test User linked to Customer...');
     await connection.query(
-      `INSERT INTO users (id, name, email, password, role, customer_id, phone, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [testUserId, 'Aiven QA Test Customer', `test_${timestamp}@computertech.vn`, 'hashed_pw_test', 'customer', testCustomerId, '0909123456', true]
+      `INSERT INTO users (id, name, email, password_hash, role_id, role_name, customer_id, phone, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [testUserId, 'Aiven QA Test Customer', `test_${timestamp}@computertech.vn`, '$2b$10$dummyhashfortestingonly1234567890123456789012', 'role_customer', 'customer', testCustomerId, '0909123456', true]
     );
     console.log('   ✓ User created successfully');
 
@@ -42,13 +46,13 @@ async function testCrud() {
     console.log('3. [WRITE] Inserting test Product & Inventory (with JSON specs)...');
     const specs = JSON.stringify({ cpu: 'Intel Core i9-14900K', ram: '64GB DDR5', gpu: 'RTX 4090 24GB' });
     await connection.query(
-      `INSERT INTO products (id, sku, name, category, price, cost, warranty_months, specs, min_stock_alert, description)
+      `INSERT INTO products (id, sku, name, slug, category_id, price, cost_price, warranty_months, specs, description)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [testProductId, `SKU-AIVEN-${timestamp}`, 'ComputerTech SuperWorkstation Pro', 'pc_parts', 95000000, 78000000, 36, specs, 2, 'Workstation for deep learning & 3D']
+      [testProductId, `SKU-AIVEN-${timestamp}`, 'ComputerTech SuperWorkstation Pro', `superworkstation-${timestamp}`, 'cat_accessories', 95000000, 78000000, 36, specs, 'Workstation for deep learning & 3D']
     );
     await connection.query(
-      `INSERT INTO inventory (product_id, quantity_on_hand, quantity_reserved, location) VALUES (?, ?, ?, ?)`,
-      [testProductId, 15, 2, 'KHO-A1-TANG2']
+      `INSERT INTO inventory (id, warehouse_id, product_id, quantity_on_hand, quantity_reserved, bin_location, min_stock_alert) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [`inv_${timestamp}`, 'wh_hcm', testProductId, 15, 2, 'KHO-A1-TANG2', 2]
     );
     console.log('   ✓ Product & Inventory record created successfully');
 
@@ -85,7 +89,7 @@ async function testCrud() {
 
     // Read 1: Customer + User join
     const [userCustRows] = await connection.query(
-      `SELECT u.id as user_id, u.email, u.role, c.id as customer_id, c.name, c.tier
+      `SELECT u.id as user_id, u.email, u.role_name, c.id as customer_id, c.name, c.tier
        FROM users u
        JOIN customers c ON u.customer_id = c.id
        WHERE u.id = ?`,
@@ -99,7 +103,7 @@ async function testCrud() {
       `SELECT p.id, p.sku, p.name, p.price, p.specs,
               i.quantity_on_hand, i.quantity_reserved,
               (i.quantity_on_hand - i.quantity_reserved) as quantity_available,
-              i.location
+              i.bin_location
        FROM products p
        JOIN inventory i ON p.id = i.product_id
        WHERE p.id = ?`,
@@ -120,20 +124,19 @@ async function testCrud() {
     console.log('8. [READ] Order & Order Items Query:');
     console.table(orderRows);
 
-    // 7. CLEANUP TEST DATA (keep database pristine)
-    console.log('\n--- CLEANING UP TEST RECORD ---');
-    await connection.query(`DELETE FROM repair_tickets WHERE id = ?`, [testTicketId]);
-    await connection.query(`DELETE FROM orders WHERE id = ?`, [testOrderId]);
-    await connection.query(`DELETE FROM products WHERE id = ?`, [testProductId]);
-    await connection.query(`DELETE FROM users WHERE id = ?`, [testUserId]);
-    await connection.query(`DELETE FROM customers WHERE id = ?`, [testCustomerId]);
-    console.log('✓ Test data cleaned up successfully without affecting production structure.');
-
     console.log('\n=== ALL AIVEN MYSQL READ & WRITE TESTS PASSED! ===');
   } catch (err) {
+    await connection.rollback().catch(() => {});
     console.error('CRUD Test Error:', err);
-    process.exit(1);
+    process.exitCode = 1;
   } finally {
+    // CLEANUP TEST DATA (keep database pristine even on partial failure)
+    await connection.query(`DELETE FROM repair_tickets WHERE id = ?`, [testTicketId]).catch(() => {});
+    await connection.query(`DELETE FROM orders WHERE id = ?`, [testOrderId]).catch(() => {});
+    await connection.query(`DELETE FROM products WHERE id = ?`, [testProductId]).catch(() => {});
+    await connection.query(`DELETE FROM users WHERE id = ?`, [testUserId]).catch(() => {});
+    await connection.query(`DELETE FROM customer_addresses WHERE customer_id = ?`, [testCustomerId]).catch(() => {});
+    await connection.query(`DELETE FROM customers WHERE id = ?`, [testCustomerId]).catch(() => {});
     await connection.end();
   }
 }

@@ -18,9 +18,12 @@ let mysqlPool = null;
 let isRealDbConnected = false;
 let realDbError = null;
 
+const dbHost = process.env.AIVEN_MYSQL_HOST || 'localhost';
+const isRemoteHost = !['localhost', '127.0.0.1'].includes(dbHost);
+
 // Khởi tạo cấu hình MySQL
 const poolConfig = {
-  host: process.env.AIVEN_MYSQL_HOST || 'localhost',
+  host: dbHost,
   port: Number(process.env.AIVEN_MYSQL_PORT || 3306),
   user: process.env.AIVEN_MYSQL_USER || 'root',
   password: process.env.AIVEN_MYSQL_PASSWORD || '',
@@ -28,7 +31,8 @@ const poolConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  connectTimeout: 2500, // Timeout nhanh trong 2.5s nếu không kết nối được
+  // Remote cloud MySQL (SSL/TLS) cần timeout dài hơn localhost để không fallback nhầm khi cold-start
+  connectTimeout: Number(process.env.MYSQL_CONNECT_TIMEOUT || (isRemoteHost ? 10000 : 2500)),
 };
 
 if (
@@ -282,7 +286,10 @@ class LocalMockDatabase {
       }
 
       if (query.includes('p.name LIKE ?')) {
-        const search = String(params[pIdx++] || '').replace(/%/g, '').toLowerCase();
+        const search = String(params[pIdx++] || '')
+          .replace(/^%|%$/g, '')
+          .replace(/\\([%_\\])/g, '$1')
+          .toLowerCase();
         pIdx++; // skip second LIKE ?
         if (search) {
           result = result.filter(
@@ -326,8 +333,13 @@ class LocalMockDatabase {
     // 7. Customers
     if (q.includes('INSERT INTO CUSTOMERS')) {
       const [id, customer_code, name, email, phone, tier] = params;
+      if (this.customers.some((c) => c.id === id)) {
+        const dupIdErr = new Error("Duplicate entry for key 'customers.PRIMARY'");
+        dupIdErr.code = 'ER_DUP_ENTRY';
+        throw dupIdErr;
+      }
       if (this.customers.some((c) => c.email.toLowerCase() === String(email || '').toLowerCase())) {
-        const dupErr = new Error('Duplicate email entry');
+        const dupErr = new Error("Duplicate entry for key 'customers.email'");
         dupErr.code = 'ER_DUP_ENTRY';
         throw dupErr;
       }
@@ -349,6 +361,13 @@ class LocalMockDatabase {
       const target = this.customers.find((c) => c.id === customerId);
       if (target && addressLine) target.address = addressLine;
       return [{ affectedRows: 1 }, []];
+    }
+
+    if (q.includes('DELETE FROM CUSTOMERS WHERE ID = ?')) {
+      const targetId = params[0];
+      const before = this.customers.length;
+      this.customers = this.customers.filter((c) => c.id !== targetId);
+      return [{ affectedRows: before - this.customers.length }, []];
     }
 
     if (q.includes('FROM CUSTOMERS WHERE EMAIL = ?')) {

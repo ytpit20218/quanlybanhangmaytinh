@@ -6,13 +6,16 @@
 ---
 
 ## 1. Tóm tắt điều hành
-- **Tổng số lỗi phát hiện & đã sửa:** **28 lỗi** (**4 Critical**, **9 High**, **11 Medium**, **4 Low**).
+- **Tổng số lỗi phát hiện & đã sửa:** **28 lỗi ban đầu + các điểm gia cố Backend chuyên sâu** (**4 Critical**, **9 High**, **11 Medium**, **4 Low**, cùng các cải tiến ổn định kết nối Aiven MySQL, bảo mật header/LIKE escaping/validation và sửa `npm run db:test`).
 - **Dọn dẹp mã nguồn thừa:** Đã xóa **14 mục** dư thừa/tạm thời (bao gồm `push_to_github.bat`, thư mục ảnh debug `screenshots/`, `frontend/test-material3-portals.mjs` và 11 script vá/chụp ảnh một lần trong `scripts/`).
-- **Trạng thái kiểm thử sau sửa chữa & dọn dẹp:**
-  - `npm --prefix frontend run build` (`tsc && vite build`): **PASS** (`1628 modules transformed`, built in `6.51s`, `0` lỗi TypeScript).
-  - `npm --prefix frontend run test:rules`: **PASS** (`26 / 26` test nghiệp vụ).
-  - Backend REST API (`src/server.mjs` kết nối Aiven MySQL `defaultdb` + kiểm thử fallback `LocalMockDatabase`): **PASS** (`0` lỗi fallback MySQL trong log).
-  - Playwright Full Regression (Desktop `1440x900`, Tablet `768x1024`, Mobile `390x844`): **PASS** (`83 / 83`, `0` console error, `0` page error, `0` broken image, `0` horizontal overflow trên 15 routes).
+- **Trạng thái kiểm thử sau sửa chữa:**
+  - **Backend Syntax Check (`node --check` trên `src/*.mjs` & `scripts/*.mjs`):** **PASS**.
+  - **Backend Database Inspect (`npm run db:inspect`):** **PASS** (Aiven MySQL `8.4.11`, `defaultdb` qua SSL/TLS, `20` bảng).
+  - **Backend CRUD & Transaction Test (`npm run db:test` - `scripts/test-crud.mjs`):** **PASS** (ghi/đọc/transaction Customer, Address, User, Product, Inventory, Order, Repair Ticket trên Aiven MySQL và tự động xóa sạch dữ liệu test).
+  - **Backend REST API Dual-Mode Suite (`16 / 16`):** **PASS** (**8 / 8** chế độ Live Aiven MySQL `mode=mysql`, `0` `[API Error]`, `0` `[MySQL Connection Lost]`; **8 / 8** chế độ Offline fallback `LocalMockDatabase` `mode=local_mock`, `0` `[API Error]`).
+  - **Frontend Build (`npm --prefix frontend run build`):** **PASS** (`1628 modules transformed`, `6.51s`, `0` lỗi TypeScript).
+  - **Frontend Business Rules (`npm --prefix frontend run test:rules`):** **PASS** (`26 / 26` test nghiệp vụ).
+  - **Playwright Full Regression (`Desktop 1440x900`, `Tablet 768x1024`, `Mobile 390x844`):** **PASS** (`83 / 83`, `0` console error, `0` page error, `0` broken image, `0` horizontal overflow trên 15 routes).
 
 ---
 
@@ -22,20 +25,20 @@
 | Mã | Mô tả lỗi | Nguyên nhân gốc rễ | Cách khắc phục | File liên quan |
 | :--- | :--- | :--- | :--- | :--- |
 | **C1** | Vượt qua đăng nhập với mật khẩu rỗng khi gỡ thuộc tính `required` | `AuthService.login()` không từ chối chuỗi mật khẩu rỗng | Kiểm tra `!password \|\| !password.trim()` ngay đầu hàm `login()` | `frontend/src/services/authService.ts` |
-| **C2** | Backdoor mật khẩu hardcode (`password123`, `admin123`, `sale123`) ở Backend | `POST /api/auth/login` có nhánh fallback so sánh mật khẩu chuỗi cứng | Xóa toàn bộ mật khẩu hardcode, chỉ xác thực bằng `bcrypt.compare` | `src/server.mjs` |
+| **C2** | Backdoor mật khẩu hardcode (`password123`, `admin123`, `sale123`) & nhánh fallback non-bcrypt ở Backend | `POST /api/auth/login` có nhánh so sánh mật khẩu chuỗi cứng/không chuẩn bcrypt | Xóa toàn bộ mật khẩu hardcode, chỉ xác thực bằng `hash.startsWith('$2') && await bcrypt.compare(...)` (9/9 user trong `defaultdb` đều dùng `$2b$`) | `src/server.mjs` |
 | **C3** | Lưu plaintext `password` & rò rỉ session khách hàng khi đăng nhập nhầm `/company/login` | Session lưu nguyên object `User` và `login()` lưu `localStorage` trước khi check `portal` | Thêm `sanitizeUser()` xóa `password`, chuyển kiểm tra `portal` vào `AuthService.login()` và bổ sung `logout()` | `frontend/src/services/authService.ts`, `frontend/src/state/AuthContext.tsx`, `frontend/src/pages/CompanyLoginPage.tsx` |
 | **C4** | `CartDrawer` gắn nhầm khách hàng VIP `cust_01` (`Phan Quốc Bảo`) & giảm 5% VIP cho khách Standard | `selectedCustomerId` fallback sang `customers[0]` và không đồng bộ khi đổi user | Đồng bộ `selectedCustomerId` qua `useEffect`, chặn fallback `customers[0]` cho tài khoản `customer`, sửa text Standard/VIP | `frontend/src/features/cart/CartDrawer.tsx` |
 
 ### High (9 lỗi)
 | Mã | Mô tả lỗi | Nguyên nhân gốc rễ | Cách khắc phục | File liên quan |
 | :--- | :--- | :--- | :--- | :--- |
-| **H1** | Nhiều API Backend lỗi SQL schema thật trên Aiven MySQL | Query dùng sai tên cột (`brands.sort_order`, `products.category`, `products.min_stock_alert`, `customers.address`, `orders.order_status`) và không kiểm tra `NaN` của `limit`/`offset` | Sửa SQL khớp DDL thực tế (`JOIN categories`, `inventory.min_stock_alert`, `orders.status`, `customer_addresses`), validate `limit`/`offset` | `src/server.mjs` |
-| **H2** | `pool.query` che giấu lỗi SQL bằng mock DB; `LocalMockDatabase` hash bcrypt giả & sai lọc email khách | Catch mọi lỗi query thay vì chỉ lỗi kết nối; hash tĩnh `$2a$10$wT8v...`; `FROM CUSTOMERS` trả hết danh sách khi check trùng | Chỉ fallback khi gặp `CONNECTION_ERROR_CODES`/`fatal`; dùng `bcrypt.hashSync`; bổ sung handler `FROM CUSTOMERS WHERE EMAIL = ?` & `c.slug` | `src/db.mjs` |
+| **H1** | Nhiều API Backend & `scripts/test-crud.mjs` lỗi SQL schema thật trên Aiven MySQL | Query dùng sai tên cột (`brands.sort_order`, `products.category`, `products.min_stock_alert`, `customers.address`, `orders.order_status`) và không kiểm tra `NaN` của `limit`/`offset` | Sửa SQL khớp DDL 20 bảng thực tế (`JOIN categories`, `inventory.min_stock_alert`, `orders.status`, `customer_addresses`), join `address` trong `GET /api/customers`, validate đầu vào `POST /api/customers` & rollback nếu insert địa chỉ lỗi, cập nhật `scripts/test-crud.mjs` | `src/server.mjs`, `scripts/test-crud.mjs` |
+| **H2** | `pool.query` che giấu lỗi SQL bằng mock DB; cold-start Aiven MySQL hay `ETIMEDOUT` ở `2.5s`; `LocalMockDatabase` hash bcrypt giả & sai lọc | Catch mọi lỗi query; `connectTimeout: 2500` quá ngắn cho TLS tới `aivencloud.com`; hash tĩnh `$2a$10$wT8v...`; `FROM CUSTOMERS` trả hết danh sách | Chỉ fallback khi gặp `CONNECTION_ERROR_CODES`/`fatal`; nâng `connectTimeout` mặc định lên `10000ms` cho remote host (`MYSQL_CONNECT_TIMEOUT`); dùng `bcrypt.hashSync`; bổ sung lọc email/id trùng, rollback delete và unescape `LIKE` trong `LocalMockDatabase` | `src/db.mjs` |
 | **H3** | Đăng ký khách hàng mới không gắn `customerId`, thiếu kiểm tra trùng email, mật khẩu ngắn | `handleRegisterSubmit` không tạo/gắn `customerId`, không check trùng email/mật khẩu < 6 ký tự, giữ fallback `'password123'` | Validate đầy đủ họ tên/email/SĐT/mật khẩu >= 6 ký tự, kiểm tra trùng, gắn `customerId` và gọi `refreshData()` | `frontend/src/pages/CustomerLoginPage.tsx` |
 | **H4** | Form đăng nhập & tạo user điền sẵn `'password123'` | State khởi tạo cứng `'password123'` | Khởi tạo state mật khẩu rỗng `''` | `CompanyLoginPage.tsx`, `CustomerLoginPage.tsx`, `AdminUsersView.tsx` |
 | **H5** | Lưu hồ sơ khách hàng dùng `alert()` giả, mất dữ liệu khi reload | `handleSaveProfile` chưa ghi `mockDb` và chưa cập nhật `AuthContext` | Lưu cập nhật xuống `mockDb`, thêm `refreshSession()` cho `AuthContext` | `frontend/src/features/customer/CustomerAccountView.tsx`, `frontend/src/state/AuthContext.tsx` |
 | **H6** | Thiếu rollback tồn kho giữ chỗ & hoàn tác đơn khi `autoConfirm` thất bại giữa vòng lặp | Vòng lặp `reserveStock` dừng giữa chừng không gọi `releaseStock`; `autoConfirm` lỗi vẫn để lại đơn `pending` | Thu hồi các mục đã `reserveStock` khi lỗi và thêm `mockDb.removeOrder()` để hoàn tác | `frontend/src/services/orderProcessingFacade.ts`, `frontend/src/services/mockDatabase.ts` |
-| **H7** | Backend thiếu validate malformed JSON và 404 handler chuẩn JSON | Express trả HTML 404 mặc định và stack trace/500 khi JSON lỗi | Bổ sung middleware xử lý SyntaxError JSON (`400`) và fallback `404` JSON | `src/server.mjs` |
+| **H7** | Backend thiếu validate malformed JSON, lộ `X-Powered-By`, tìm kiếm `LIKE` không escape wildcard & thiếu 404 JSON | Express trả HTML 404 mặc định, lộ header `X-Powered-By`, `?search=%` khớp toàn bộ bảng, JSON lỗi trả 500 | Tắt `x-powered-by`, escape `%`/`_`/`\` và trim `search`, thêm middleware JSON `400`, fallback `404` JSON, phân biệt `409 Customer ID already exists` vs email | `src/server.mjs` |
 | **H8** | Deep-link `/store/orders`, `/store/warranty` luôn mở tab Tổng quan; nút `"Chi tiết"` không chạy | `activeTab` khởi tạo cứng `'overview'`, thiếu state/modal chi tiết đơn | Parse `location.pathname` để bật đúng tab và bổ sung Modal Chi tiết đơn hàng | `frontend/src/features/customer/CustomerAccountView.tsx` |
 | **H9** | Dropdown `Linh kiện PC` trên thanh menu bị cắt dọc | Menu con `position: absolute` đặt bên trong container `overflow-x-auto` (`navClientHeight: 42`) | Di chuyển dropdown ra ngoài `overflow-x-auto` với tọa độ `dropdownLeft` động | `frontend/src/components/store/StoreHeader.tsx` |
 
@@ -75,9 +78,9 @@
 
 ---
 
-## 4. Các hạn chế / phần chưa thể thực hiện
-1. **Chưa tự động push lên GitHub và xóa `push_to_github.bat` trên remote GitHub (`https://github.com/ytpit20218/quanlybanhangmaytinh.git`):**
-   - Máy hiện chưa cài `git` CLI / `gh` CLI, thư mục dự án là bản tải ZIP (không có `.git`), và không có GitHub token/SSH key hoặc thông tin xác thực GitHub được cấu hình trên máy.
-   - Đã hoàn tất sửa lỗi, tạo báo cáo và xóa `push_to_github.bat` cùng file thừa ở thư mục local; chỉ cần xác thực GitHub (PAT hoặc cài Git/GitHub CLI và đăng nhập) để đẩy bản cập nhật lên nhánh `main` (lúc push sẽ tự động xóa `push_to_github.bat` và các file thừa trên GitHub).
-2. **Kiến trúc Frontend dùng `localStorage`:** Giữ nguyên theo ràng buộc không thay đổi kiến trúc lớn.
-3. **Không có cấu hình ESLint:** `package.json` gốc và `frontend/package.json` chưa khai báo script `lint`.
+## 4. Ghi chú vận hành & các phần chưa thể tự động hoàn tất
+1. **Trạng thái GitHub (`https://github.com/ytpit20218/quanlybanhangmaytinh.git`):**
+   - Toàn bộ thay đổi (xóa `push_to_github.bat`, xóa 13 mục thừa, sửa lỗi Frontend/Backend và cập nhật báo cáo `BAO_CAO_QA.md`) đã được commit và đẩy đồng bộ lên nhánh `main` của repository GitHub.
+2. **Script DDL/Seed đời cũ (`scripts/migrate.mjs`, `scripts/seed-db.mjs`, `scripts/run-sql.mjs`):**
+   - Các script này trỏ tới schema v1 cũ (`computertech_database.sql`, 10 bảng), không tương thích với schema 20 bảng hiện hành trên Aiven `defaultdb` (được quản lý qua `scripts/rebuild-database.mjs` / `database/computertech_full_schema_and_seed.sql`). Không chạy các script khởi tạo lại/seed đè này vào database thật.
+3. **Kiến trúc Frontend dùng `localStorage` & thiếu ESLint:** Giữ nguyên kiến trúc lưu phiên phía client theo ràng buộc; `package.json` gốc và `frontend/package.json` chưa khai báo script `lint`.

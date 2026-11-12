@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
+app.disable('x-powered-by');
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
@@ -92,9 +93,11 @@ app.get('/api/products', async (req, res) => {
       query += ' AND (p.category_id = ? OR c.slug = ? OR c.parent_id = ?)';
       params.push(cat, cat, cat);
     }
-    if (search) {
+    const searchClean = typeof search === 'string' ? search.trim() : '';
+    if (searchClean) {
+      const escapedSearch = searchClean.replace(/[\\%_]/g, '\\$&');
       query += ' AND (p.name LIKE ? OR p.sku LIKE ?)';
-      params.push(`%${String(search).trim()}%`, `%${String(search).trim()}%`);
+      params.push(`%${escapedSearch}%`, `%${escapedSearch}%`);
     }
 
     query += ' ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
@@ -156,7 +159,16 @@ app.get('/api/inventory', async (req, res) => {
 // 7. Customers
 app.get('/api/customers', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM customers ORDER BY created_at DESC');
+    const [rows] = await pool.query(`
+      SELECT c.*,
+             (SELECT ca.address_line
+              FROM customer_addresses ca
+              WHERE ca.customer_id = c.id
+              ORDER BY ca.is_default DESC, ca.created_at DESC
+              LIMIT 1) AS address
+      FROM customers c
+      ORDER BY c.created_at DESC
+    `);
     res.json({ success: true, data: rows });
   } catch (err) {
     sendServerError(res, err);
@@ -164,41 +176,61 @@ app.get('/api/customers', async (req, res) => {
 });
 
 app.post('/api/customers', async (req, res) => {
+  let createdCustomerId = null;
   try {
     const { id, name, email, phone = null, address = null, tier = 'standard' } = req.body || {};
     const nameClean = typeof name === 'string' ? name.trim() : '';
     const emailClean = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const tierClean = typeof tier === 'string' ? tier.trim().toLowerCase() : '';
+    const phoneClean = typeof phone === 'string' ? phone.trim() || null : null;
+    const addressClean = typeof address === 'string' ? address.trim() || null : null;
 
-    if (!nameClean || !emailClean || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailClean)) {
+    if (!nameClean || nameClean.length > 255 || !emailClean || emailClean.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailClean)) {
       return res.status(400).json({ success: false, message: 'Valid name and email are required' });
     }
-    if (!['standard', 'vip'].includes(tier)) {
+    if (phoneClean && phoneClean.length > 50) {
+      return res.status(400).json({ success: false, message: 'phone must be at most 50 characters' });
+    }
+    if (!['standard', 'vip'].includes(tierClean)) {
       return res.status(400).json({ success: false, message: 'tier must be standard or vip' });
     }
+    if (id !== undefined && (typeof id !== 'string' || !id.trim() || id.trim().length > 64)) {
+      return res.status(400).json({ success: false, message: 'id must be a non-empty string up to 64 characters' });
+    }
 
-    const customerId = id || `cust_${Date.now()}`;
-    const customerCode = `KH-${Date.now()}`;
-    const phoneClean = typeof phone === 'string' ? phone.trim() || null : null;
+    const uniq = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const customerId = typeof id === 'string' ? id.trim() : `cust_${uniq}`;
+    const customerCode = `KH-${uniq}`;
 
     await pool.query(
       'INSERT INTO customers (id, customer_code, name, email, phone, tier) VALUES (?, ?, ?, ?, ?, ?)',
-      [customerId, customerCode, nameClean, emailClean, phoneClean, tier]
+      [customerId, customerCode, nameClean, emailClean, phoneClean, tierClean]
     );
+    createdCustomerId = customerId;
 
-    if (typeof address === 'string' && address.trim()) {
+    if (addressClean) {
       await pool.query(
         'INSERT INTO customer_addresses (id, customer_id, recipient_name, phone, address_line, is_default) VALUES (?, ?, ?, ?, ?, 1)',
-        [`addr_${Date.now()}`, customerId, nameClean, phoneClean || '', address.trim()]
+        [`addr_${uniq}`, customerId, nameClean, phoneClean || '', addressClean]
       );
     }
 
     res.status(201).json({
       success: true,
-      data: { id: customerId, customer_code: customerCode, name: nameClean, email: emailClean, phone: phoneClean, tier },
+      data: { id: customerId, customer_code: customerCode, name: nameClean, email: emailClean, phone: phoneClean, address: addressClean, tier: tierClean },
     });
   } catch (err) {
+    if (createdCustomerId) {
+      await pool.query('DELETE FROM customers WHERE id = ?', [createdCustomerId]).catch(() => {});
+    }
     if (err?.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ success: false, message: 'Customer email already exists' });
+      const msg = String(err.message || '').toLowerCase();
+      return res.status(409).json({
+        success: false,
+        message: msg.includes('primary') || msg.includes('customer_code')
+          ? 'Customer ID already exists'
+          : 'Customer email already exists',
+      });
     }
     sendServerError(res, err);
   }
@@ -245,10 +277,8 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const user = rows[0];
-    const hash = user.password_hash || user.password || '';
-    const isMatch = hash.startsWith('$2')
-      ? await bcrypt.compare(passwordClean, hash)
-      : Boolean(hash) && hash === passwordClean;
+    const hash = user.password_hash || '';
+    const isMatch = hash.startsWith('$2') && (await bcrypt.compare(passwordClean, hash));
 
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
