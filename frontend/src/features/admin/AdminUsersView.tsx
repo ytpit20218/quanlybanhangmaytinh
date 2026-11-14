@@ -103,13 +103,13 @@ export const AdminUsersView: React.FC = () => {
         <div>
           <div className="flex items-center space-x-2 text-blue-600 font-bold uppercase text-[11px] mb-1">
             <Users className="w-4 h-4" />
-            <span>EXECUTIVE AUTHORIZATION DIRECTORY</span>
+            <span>DANH BẠ ỦY QUYỀN & NHÂN SỰ</span>
           </div>
           <h1 className="font-display font-bold text-2xl text-slate-900">
-            Staff Accounts & Role Governance
+            Quản lý Tài khoản & Phân quyền Nhân sự
           </h1>
           <p className="text-slate-500 text-xs mt-1">
-            Manage multi-tenant operational credentials, role assignments, and active account status (Requirement #5 & #10)
+            Quản lý thông tin đăng nhập, phân quyền vai trò và trạng thái hoạt động của nhân sự trong hệ thống
           </p>
         </div>
 
@@ -118,7 +118,7 @@ export const AdminUsersView: React.FC = () => {
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg shadow-sm transition flex items-center space-x-1.5 self-start"
         >
           <UserPlus className="w-4 h-4" />
-          <span>Provision New Account</span>
+          <span>Cấp tài khoản mới</span>
         </button>
       </div>
 
@@ -130,7 +130,7 @@ export const AdminUsersView: React.FC = () => {
             onClick={() => setActionBanner(null)}
             className="ml-4 font-semibold text-rose-700 hover:text-rose-900"
           >
-            Dismiss
+            Đóng
           </button>
         </div>
       )}
@@ -140,7 +140,7 @@ export const AdminUsersView: React.FC = () => {
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
-            placeholder="Search staff or email..."
+            placeholder="Tìm theo tên hoặc email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-64 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-800 placeholder-slate-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -151,16 +151,16 @@ export const AdminUsersView: React.FC = () => {
             onChange={(e) => setRoleFilter(e.target.value as any)}
             className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 text-xs uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
           >
-            <option value="all">ALL ROLES</option>
-            <option value="admin">ADMINISTRATOR</option>
-            <option value="sale">SALES</option>
-            <option value="warehouse">WAREHOUSE</option>
-            <option value="technician">TECHNICIAN</option>
+            <option value="all">TẤT CẢ VAI TRÒ</option>
+            <option value="admin">QUẢN TRỊ VIÊN</option>
+            <option value="sale">BÁN HÀNG</option>
+            <option value="warehouse">THỦ KHO</option>
+            <option value="technician">KỸ THUẬT VIÊN</option>
           </select>
         </div>
 
         <div className="text-slate-500 text-xs">
-          Total Registered Users: <strong className="text-slate-900 font-mono">{filteredUsers.length}</strong>
+          Tổng số tài khoản: <strong className="text-slate-900 font-mono">{filteredUsers.length}</strong>
         </div>
       </div>
 
@@ -170,11 +170,11 @@ export const AdminUsersView: React.FC = () => {
           <table className="w-full text-left">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-semibold tracking-wider">
               <tr>
-                <th className="py-3 px-4">Account Holder</th>
-                <th className="py-3 px-4">Role Assignment</th>
-                <th className="py-3 px-4">Email Identifier</th>
-                <th className="py-3 px-4 text-center">Account Status</th>
-                <th className="py-3 px-4 text-center">Security Access Control</th>
+                <th className="py-3 px-4">Nhân sự</th>
+                <th className="py-3 px-4">Vai trò</th>
+                <th className="py-3 px-4">Email đăng nhập</th>
+                <th className="py-3 px-4 text-center">Trạng thái</th>
+                <th className="py-3 px-4 text-center">Thao tác bảo mật</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
@@ -190,7 +190,7 @@ export const AdminUsersView: React.FC = () => {
                           <span>{u.name}</span>
                           {isSelf && (
                             <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded font-bold uppercase">
-                              You
+                              Bạn
                             </span>
                           )}
                         </div>
@@ -212,7 +212,7 @@ export const AdminUsersView: React.FC = () => {
                             : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         }`}
                       >
-                        {u.role}
+                        {u.role === 'admin' ? 'Quản trị viên' : u.role === 'sale' ? 'Bán hàng' : u.role === 'warehouse' ? 'Thủ kho' : u.role === 'technician' ? 'Kỹ thuật' : u.role}
                       </span>
                     </td>
 
@@ -223,11 +223,11 @@ export const AdminUsersView: React.FC = () => {
                     <td className="py-3 px-4 text-center">
                       {u.active ? (
                         <span className="inline-flex items-center text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" /> ACTIVE
+                          <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" /> HOẠT ĐỘNG
                         </span>
                       ) : (
                         <span className="inline-flex items-center text-[10px] text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                          <ShieldAlert className="w-3 h-3 mr-1 text-rose-600" /> SUSPENDED
+                          <ShieldAlert className="w-3 h-3 mr-1 text-rose-600" /> ĐÃ KHÓA
                         </span>
                       )}
                     </td>
@@ -247,12 +247,12 @@ export const AdminUsersView: React.FC = () => {
                         {u.active ? (
                           <>
                             <Lock className="w-3 h-3" />
-                            <span>Deactivate Access</span>
+                            <span>Khóa tài khoản (Deactivate)</span>
                           </>
                         ) : (
                           <>
                             <Unlock className="w-3 h-3" />
-                            <span>Restore Access</span>
+                            <span>Mở khóa tài khoản (Active)</span>
                           </>
                         )}
                       </button>
@@ -274,7 +274,7 @@ export const AdminUsersView: React.FC = () => {
                 <div className="p-1.5 bg-blue-50 text-blue-600 rounded">
                   <UserPlus className="w-4 h-4" />
                 </div>
-                <h3 className="font-bold text-sm text-slate-900">Provision Operational Account</h3>
+                <h3 className="font-bold text-sm text-slate-900">Cấp Tài Khoản Nhân Sự Mới</h3>
               </div>
               <button
                 onClick={() => setIsAddUserOpen(false)}
@@ -293,11 +293,11 @@ export const AdminUsersView: React.FC = () => {
 
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Full Name / Operator Label</label>
+                <label className="block text-slate-600 font-medium mb-1">Họ và tên nhân viên</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Tran Minh Tuan"
+                  placeholder="Ví dụ: Trần Minh Tuấn"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -305,7 +305,7 @@ export const AdminUsersView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Account Email / Identity</label>
+                <label className="block text-slate-600 font-medium mb-1">Email đăng nhập (@computertech.vn)</label>
                 <input
                   type="email"
                   required
@@ -317,22 +317,22 @@ export const AdminUsersView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Assigned Operational Role</label>
+                <label className="block text-slate-600 font-medium mb-1">Phân quyền vai trò</label>
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value as UserRole)}
                   className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-slate-800 uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
                 >
-                  <option value="sale">SALES (Counter POS & Registration)</option>
-                  <option value="warehouse">WAREHOUSE (Stock Matrix & Picking)</option>
-                  <option value="technician">TECHNICIAN (Diagnostic Bench & Requisition)</option>
-                  <option value="admin">ADMINISTRATOR (Executive Oversight)</option>
-                  <option value="customer">CUSTOMER (Online Storefront)</option>
+                  <option value="sale">BÁN HÀNG (Quầy POS & Đăng ký khách)</option>
+                  <option value="warehouse">THỦ KHO (Tồn kho & Soạn xuất hàng)</option>
+                  <option value="technician">KỸ THUẬT VIÊN (Kiểm định Lab & Bảo hành)</option>
+                  <option value="admin">QUẢN TRỊ VIÊN (Toàn quyền điều hành)</option>
+                  <option value="customer">KHÁCH HÀNG (Mua sắm trực tuyến)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Initial Password</label>
+                <label className="block text-slate-600 font-medium mb-1">Mật khẩu ban đầu</label>
                 <input
                   type="password"
                   required
@@ -348,13 +348,13 @@ export const AdminUsersView: React.FC = () => {
                   onClick={() => setIsAddUserOpen(false)}
                   className="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded border border-slate-200 transition"
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded shadow-sm transition"
                 >
-                  Create & Provision Account
+                  Tạo & Cấp tài khoản
                 </button>
               </div>
             </form>

@@ -39,9 +39,9 @@ export const M3Badge: React.FC<M3BadgeProps> = ({
   if (!children) return badgeElement;
 
   return (
-    <div className="relative inline-flex items-center">
+    <div className="relative inline-flex items-center justify-center">
       {children}
-      <span className="absolute -top-1 -right-1 pointer-events-none">
+      <span className="absolute -top-2 -right-2 pointer-events-none">
         {badgeElement}
       </span>
     </div>

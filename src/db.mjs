@@ -392,7 +392,48 @@ class LocalMockDatabase {
           .reduce((sum, o) => sum + (o.total_amount || 0), 0);
         return [[{ total_revenue: rev }], []];
       }
+      if (q.includes('WHERE ID = ? OR ORDER_NUMBER = ?')) {
+        const idOrNum = String(params[0] || '').toLowerCase();
+        const found = this.orders.filter(
+          (o) => String(o.id).toLowerCase() === idOrNum || String(o.order_number).toLowerCase() === idOrNum
+        );
+        return [found, []];
+      }
       return [this.orders, []];
+    }
+
+    if (q.includes('INSERT INTO ORDERS')) {
+      const newOrd = {
+        id: params[0],
+        order_number: params[1],
+        customer_id: params[2],
+        status: 'pending',
+        subtotal: params[3],
+        discount_amount: params[4],
+        shipping_fee: params[5],
+        total_amount: params[6],
+        payment_status: 'unpaid',
+        payment_method: params[7],
+        payment_code: params[8],
+        payment_expires_at: params[9],
+        pricing_strategy_name: params[10],
+        notes: params[11],
+        created_at: new Date().toISOString(),
+      };
+      this.orders.unshift(newOrd);
+      return [{ affectedRows: 1 }, []];
+    }
+
+    if (q.includes('UPDATE ORDERS')) {
+      return [{ affectedRows: 1 }, []];
+    }
+
+    if (q.includes('INSERT INTO PAYMENTS')) {
+      return [{ affectedRows: 1 }, []];
+    }
+
+    if (q.includes('INSERT INTO ORDER_STATUS_HISTORIES')) {
+      return [{ affectedRows: 1 }, []];
     }
 
     if (q.includes('FROM ORDER_ITEMS')) {

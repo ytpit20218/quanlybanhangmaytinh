@@ -2,13 +2,14 @@
 // COMMERCIAL POINT-OF-SALE & ORDER LIFECYCLE
 // ==========================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   AlertCircle,
   Barcode,
+  Check,
   CheckCircle2,
+  ChevronDown,
   Clock,
-  CreditCard,
   Banknote,
   Building,
   FileText,
@@ -17,6 +18,8 @@ import {
   Layers,
   Lock,
   Minus,
+  Package,
+  Phone,
   Plus,
   Printer,
   RotateCcw,
@@ -25,16 +28,25 @@ import {
   ShoppingBag,
   ShoppingCart,
   Trash2,
+  User,
   UserCheck,
   UserPlus,
   X,
   XCircle,
+  QrCode,
+  Truck,
+  ArrowUpDown,
+  FileCheck2,
+  RefreshCw,
+  CreditCard,
 } from 'lucide-react';
 import { OrderProcessingFacade } from '../../services/orderProcessingFacade';
 import { PricingCalculator } from '../../strategies/pricing/pricingStrategy';
 import { useApp } from '../../state/AppContext';
 import { Customer, CustomerTier, Order, OrderItem, PaymentMethod, Product, ProductCategory } from '../../types';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { mockDb } from '../../services/mockDatabase';
+import { BankTransferQrCard } from '../../components/payment/BankTransferQrCard';
 
 export const PosView: React.FC = () => {
   const {
@@ -46,8 +58,24 @@ export const PosView: React.FC = () => {
     refreshData,
   } = useApp();
 
+  const location = useLocation();
+  const navigate = useNavigate();
+
   // Active Tab: 'counter' (Fast Sales Terminal) or 'orders' (Order Lifecycle Manager)
-  const [activeTab, setActiveTab] = useState<'counter' | 'orders'>('counter');
+  // Route-aware initialization: /orders -> 'orders', /pos -> 'counter'
+  const isOrdersRoute = location.pathname.endsWith('/orders');
+  const [activeTab, setActiveTab] = useState<'counter' | 'orders'>(() => {
+    return isOrdersRoute ? 'orders' : 'counter';
+  });
+
+  // Keep activeTab in sync whenever URL changes (e.g. clicking top nav links)
+  useEffect(() => {
+    if (location.pathname.endsWith('/orders')) {
+      setActiveTab('orders');
+    } else if (location.pathname.endsWith('/pos')) {
+      setActiveTab('counter');
+    }
+  }, [location.pathname]);
 
   // --- Counter State ---
   const [cartItems, setCartItems] = useState<Array<{ product: Product; quantity: number }>>([]);
@@ -55,6 +83,9 @@ export const PosView: React.FC = () => {
   const [posSearch, setPosSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'all'>('all');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>(customers[0]?.id || '');
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const customerSearchRef = useRef<HTMLDivElement>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [counterNote, setCounterNote] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -62,6 +93,9 @@ export const PosView: React.FC = () => {
 
   // --- Orders Management Tab Filter & Action State ---
   const [statusFilter, setStatusFilter] = useState<Order['status'] | 'all'>('all');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('all');
+  const [orderSearchQuery, setOrderSearchQuery] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
   const [selectedOrderForModal, setSelectedOrderForModal] = useState<Order | null>(null);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
@@ -72,6 +106,50 @@ export const PosView: React.FC = () => {
       setSelectedCustomerId(customers[0].id);
     }
   }, [customers, selectedCustomerId]);
+
+  // Click outside listener to close customer search dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (customerSearchRef.current && !customerSearchRef.current.contains(e.target as Node)) {
+        setIsCustomerDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const normalizeText = (text: string) => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .trim();
+  };
+
+  const filteredCustomers = customers.filter((c) => {
+    if (!customerSearchQuery.trim()) return true;
+    const q = customerSearchQuery.trim();
+    const qNorm = normalizeText(q);
+    const qDigits = q.replace(/\D/g, '');
+
+    const nameNorm = normalizeText(c.name);
+    const phoneDigits = (c.phone || '').replace(/\D/g, '');
+    const emailNorm = normalizeText(c.email || '');
+
+    // Match by customer name (accent-insensitive)
+    if (nameNorm.includes(qNorm)) return true;
+
+    // Match by phone number (with or without dashes/spaces)
+    if (qDigits && phoneDigits.includes(qDigits)) return true;
+    if (c.phone && c.phone.toLowerCase().includes(q.toLowerCase())) return true;
+
+    // Match by email
+    if (emailNorm.includes(qNorm)) return true;
+
+    return false;
+  });
 
   const fallbackGuestCustomer: Customer = {
     id: 'cust_walkin',
@@ -234,7 +312,39 @@ export const PosView: React.FC = () => {
   });
 
   const filteredOrders = orders.filter((o) => {
+    // 1. Order status filter
     if (statusFilter !== 'all' && o.status !== statusFilter) return false;
+
+    // 2. Payment status filter (Unpaid query / Paid query)
+    if (paymentStatusFilter !== 'all') {
+      if (paymentStatusFilter === 'paid' && o.paymentStatus !== 'paid') return false;
+      if (paymentStatusFilter === 'unpaid' && o.paymentStatus === 'paid') return false;
+    }
+
+    // 3. Payment method filter
+    if (paymentMethodFilter !== 'all') {
+      if (paymentMethodFilter === 'bank_transfer' && o.paymentMethod !== 'bank_transfer') {
+        return false;
+      }
+      if (paymentMethodFilter === 'cod' && o.paymentMethod !== 'cod') return false;
+      if (paymentMethodFilter === 'cash' && o.paymentMethod !== 'cash') return false;
+    }
+
+    // 4. Search query (Order number, Customer Name, Phone)
+    if (orderSearchQuery.trim()) {
+      const q = orderSearchQuery.toLowerCase().trim();
+      const cust = customers.find((c) => c.id === o.customerId);
+      const custName = (cust?.name || '').toLowerCase();
+      const custPhone = (cust?.phone || '').toLowerCase();
+      const ordNum = (o.orderNumber || '').toLowerCase();
+
+      return (
+        ordNum.includes(q) ||
+        custName.includes(q) ||
+        custPhone.includes(q)
+      );
+    }
+
     return true;
   });
 
@@ -245,50 +355,29 @@ export const PosView: React.FC = () => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm">
-              <ShoppingBag className="w-5 h-5" />
+              {activeTab === 'counter' ? <ShoppingBag className="w-5 h-5" /> : <Package className="w-5 h-5" />}
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-lg font-bold text-slate-900 leading-tight">
-                  Point-of-Sale Counter
+                  {activeTab === 'counter' ? 'Quầy bán lẻ & Thu ngân' : 'Xử lý & Quản lý đơn hàng'}
                 </h1>
                 <span className="text-[11px] font-semibold px-2.5 py-0.5 bg-blue-50 text-blue-700 rounded-md border border-blue-200 font-mono">
-                  POS Terminal
+                  {activeTab === 'counter' ? 'Quầy POS' : 'Xử lý đơn hàng'}
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Nhân viên quầy: <strong className="text-slate-700">{currentUser.name}</strong> • Quét mã SKU & Phân bổ kho tức thì
+                {activeTab === 'counter' ? (
+                  <>
+                    Nhân viên quầy: <strong className="text-slate-700">{currentUser.name}</strong> • Quét mã SKU & Phân bổ kho tức thì
+                  </>
+                ) : (
+                  <>
+                    Nhân viên xử lý: <strong className="text-slate-700">{currentUser.name}</strong> • Quản lý vòng đời đơn hàng & Phê duyệt trạng thái
+                  </>
+                )}
               </p>
             </div>
-          </div>
-
-          {/* Mode Switcher */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 self-start md:self-auto text-xs max-w-full">
-            <button
-              onClick={() => setActiveTab('counter')}
-              className={`px-3 sm:px-4 py-2 font-semibold rounded-md transition flex items-center space-x-2 ${
-                activeTab === 'counter'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-              }`}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span>Quầy bán hàng & Thu ngân</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('orders')}
-              className={`px-4 py-2 font-semibold rounded-md transition flex items-center space-x-2 ${
-                activeTab === 'orders'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              <span>Quản lý vòng đời đơn hàng</span>
-              <span className="font-mono text-[11px] bg-slate-200 px-1.5 py-0.2 rounded-full text-slate-700">
-                {orders.length}
-              </span>
-            </button>
           </div>
         </div>
       </div>
@@ -321,22 +410,147 @@ export const PosView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto min-w-0">
-                <select
-                  value={selectedCustomerId}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
-                  className="w-full sm:w-auto max-w-full min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.tier.toUpperCase()}) — {c.phone}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full sm:w-auto min-w-0">
+                <div className="relative w-full sm:w-80 md:w-96" ref={customerSearchRef}>
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      data-testid="pos-customer-search-input"
+                      type="text"
+                      value={customerSearchQuery}
+                      onChange={(e) => {
+                        setCustomerSearchQuery(e.target.value);
+                        setIsCustomerDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsCustomerDropdownOpen(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setIsCustomerDropdownOpen(false);
+                        } else if (e.key === 'Enter' && filteredCustomers.length > 0) {
+                          e.preventDefault();
+                          const target = filteredCustomers[0];
+                          if (target) {
+                            setSelectedCustomerId(target.id);
+                            setIsCustomerDropdownOpen(false);
+                            setCustomerSearchQuery('');
+                          }
+                        }
+                      }}
+                      placeholder="Tìm theo tên hoặc SĐT khách hàng..."
+                      className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-lg pl-8 pr-16 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs transition"
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                      {customerSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomerSearchQuery('');
+                            setIsCustomerDropdownOpen(true);
+                          }}
+                          className="p-1 text-slate-400 hover:text-slate-600 rounded"
+                          title="Xóa tìm kiếm"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
+                        className="p-1 text-slate-400 hover:text-slate-600 rounded"
+                        title="Danh sách khách hàng"
+                      >
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isCustomerDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Dropdown list of matching customers */}
+                  {isCustomerDropdownOpen && (
+                    <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-72 overflow-y-auto divide-y divide-slate-100">
+                      <div className="px-3 py-1.5 bg-slate-50 text-[11px] font-semibold text-slate-500 flex items-center justify-between sticky top-0 border-b border-slate-100">
+                        <span>
+                          {customerSearchQuery.trim()
+                            ? `Khách hàng phù hợp (${filteredCustomers.length})`
+                            : `Tất cả khách hàng (${customers.length})`}
+                        </span>
+                        {customerSearchQuery.trim() && filteredCustomers.length > 0 && (
+                          <span className="text-[10px] text-blue-600 font-normal">Ấn Enter chọn người đầu</span>
+                        )}
+                      </div>
+
+                      {filteredCustomers.length === 0 ? (
+                        <div className="p-4 text-center">
+                          <p className="text-xs text-slate-500">
+                            Không tìm thấy khách hàng nào khớp với <strong className="text-slate-700">"{customerSearchQuery}"</strong>
+                          </p>
+                          <Link
+                            to="/sales/customers"
+                            className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            <span>Đăng ký khách mới</span>
+                          </Link>
+                        </div>
+                      ) : (
+                        filteredCustomers.map((cust) => {
+                          const isSelected = cust.id === selectedCustomerId;
+                          return (
+                            <button
+                              key={cust.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCustomerId(cust.id);
+                                setIsCustomerDropdownOpen(false);
+                                setCustomerSearchQuery('');
+                              }}
+                              className={`w-full text-left px-3 py-2.5 hover:bg-blue-50/70 transition flex items-center justify-between gap-3 ${
+                                isSelected ? 'bg-blue-50/50' : ''
+                              }`}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-xs font-bold ${isSelected ? 'text-blue-700' : 'text-slate-900'}`}>
+                                    {cust.name}
+                                  </span>
+                                  <span
+                                    className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                                      cust.tier === 'vip'
+                                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                        : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                    }`}
+                                  >
+                                    {cust.tier === 'vip' ? 'VIP (-5%)' : 'Chuẩn'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-3 mt-0.5 text-[11px] text-slate-500">
+                                  <span className="flex items-center gap-1 font-mono text-blue-600 font-semibold">
+                                    <Phone className="w-3 h-3 text-blue-500" />
+                                    {cust.phone}
+                                  </span>
+                                  {cust.email && (
+                                    <span className="truncate max-w-[150px] text-slate-400">
+                                      {cust.email}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {isSelected && (
+                                <div className="shrink-0 text-blue-600">
+                                  <Check className="w-4 h-4" />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 <Link
                   to="/sales/customers"
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition flex items-center space-x-1"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition flex items-center space-x-1 shrink-0 whitespace-nowrap"
                 >
                   <UserPlus className="w-3.5 h-3.5 text-blue-600" />
                   <span>Đăng ký khách mới</span>
@@ -566,31 +780,18 @@ export const PosView: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                     Hình thức thanh toán
                   </label>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('bank_transfer')}
                       className={`flex items-center justify-center space-x-1.5 py-2 rounded-lg border font-medium transition ${
                         paymentMethod === 'bank_transfer'
-                          ? 'bg-blue-50 border-blue-500 text-blue-700'
+                          ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold'
                           : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                       }`}
                     >
                       <Building className="w-3.5 h-3.5" />
-                      <span>QR Bank</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('card')}
-                      className={`flex items-center justify-center space-x-1.5 py-2 rounded-lg border font-medium transition ${
-                        paymentMethod === 'card'
-                          ? 'bg-blue-50 border-blue-500 text-blue-700'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      <CreditCard className="w-3.5 h-3.5" />
-                      <span>Thẻ / POS</span>
+                      <span>Chuyển khoản (CK)</span>
                     </button>
 
                     <button
@@ -598,7 +799,7 @@ export const PosView: React.FC = () => {
                       onClick={() => setPaymentMethod('cash')}
                       className={`flex items-center justify-center space-x-1.5 py-2 rounded-lg border font-medium transition ${
                         paymentMethod === 'cash'
-                          ? 'bg-blue-50 border-blue-500 text-blue-700'
+                          ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold'
                           : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                       }`}
                     >
@@ -606,6 +807,16 @@ export const PosView: React.FC = () => {
                       <span>Tiền mặt</span>
                     </button>
                   </div>
+
+                  {paymentMethod === 'bank_transfer' && (
+                    <div className="mt-2.5">
+                      <BankTransferQrCard
+                        amount={pricing.totalAmount}
+                        customerName={selectedCustomer?.name}
+                        compact={true}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Counter Notes */}
@@ -651,7 +862,7 @@ export const PosView: React.FC = () => {
               <div>
                 <h3 className="font-bold text-base text-slate-900">Quản lý vòng đời đơn hàng & Phê duyệt</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Chuyển trạng thái đơn hàng tuân thủ quy tắc máy trạng thái (BR.05 & BR.07)
+                  Kiểm soát trạng thái thanh toán và vòng đời đơn hàng tuân thủ quy tắc máy trạng thái (BR.05 & BR.07)
                 </p>
               </div>
 
@@ -680,108 +891,266 @@ export const PosView: React.FC = () => {
               </div>
             )}
 
-            {/* Orders Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
-                  <tr>
-                    <th className="py-3 px-4">Mã đơn hàng</th>
-                    <th className="py-3 px-4">Khách hàng</th>
-                    <th className="py-3 px-4">Trạng thái</th>
-                    <th className="py-3 px-4 text-right">Tổng tiền</th>
-                    <th className="py-3 px-4">Thanh toán</th>
-                    <th className="py-3 px-4 text-center">Thao tác chuyển bước</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {filteredOrders.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400">
-                        Không có đơn hàng nào khớp bộ lọc.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredOrders.map((o) => {
-                      const cust = customers.find((c) => c.id === o.customerId);
-                      return (
-                        <tr key={o.id} className="hover:bg-slate-50/80 transition">
-                          <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                            {o.orderNumber}
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="font-semibold text-slate-900">{cust?.name || 'Khách vãng lai'}</div>
-                            <div className="text-[11px] font-mono text-slate-500">{cust?.phone}</div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                o.status === 'completed'
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : o.status === 'confirmed'
-                                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                  : o.status === 'pending'
-                                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
-                              }`}
-                            >
-                              {o.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
-                            {formatVND(o.totalAmount)}
-                          </td>
-                          <td className="py-3 px-4 font-mono uppercase text-[11px]">
-                            {o.paymentMethod} •{' '}
-                            <span className={o.paymentStatus === 'paid' ? 'text-emerald-600 font-bold' : 'text-slate-500'}>
-                              {o.paymentStatus}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <div className="flex items-center justify-center space-x-1.5">
-                              {o.status === 'pending' && (
-                                <button
-                                  onClick={() => handleTransition(o.id, 'confirmed')}
-                                  className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-semibold transition"
-                                >
-                                  Duyệt xác nhận
-                                </button>
-                              )}
+            {/* Search & Advanced Filters Bar */}
+            <div className="space-y-3 pb-2">
+              <div className="flex flex-col md:flex-row gap-2.5 items-center justify-between">
+                {/* Search Input */}
+                <div className="relative w-full md:w-96">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Tìm theo mã đơn, tên khách, SĐT..."
+                    value={orderSearchQuery}
+                    onChange={(e) => setOrderSearchQuery(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
 
-                              {o.status === 'confirmed' && (
-                                <button
-                                  onClick={() => handleTransition(o.id, 'completed')}
-                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-semibold transition"
-                                >
-                                  Hoàn tất giao máy
-                                </button>
-                              )}
+                    {/* Quick Filters */}
+                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto text-xs">
+                      {/* Payment Status Filter */}
+                      <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg">
+                        <span className="text-[10px] text-slate-500 font-semibold uppercase px-1">Thanh toán:</span>
+                        {(['all', 'paid', 'unpaid'] as const).map((ps) => (
+                          <button
+                            key={ps}
+                            onClick={() => setPaymentStatusFilter(ps)}
+                            className={`px-2 py-0.5 rounded font-semibold text-[11px] transition ${
+                              paymentStatusFilter === ps
+                                ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            {ps === 'all' ? 'Tất cả' : ps === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                          </button>
+                        ))}
+                      </div>
 
-                              {(o.status === 'pending' || o.status === 'confirmed') && (
-                                <button
-                                  onClick={() => {
-                                    setCancelReasonInput('');
-                                    setCancellingOrderId(o.id);
-                                  }}
-                                  className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-medium border border-rose-200 transition"
-                                >
-                                  Hủy
-                                </button>
-                              )}
+                      {/* Payment Method Filter */}
+                      <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg">
+                        <span className="text-[10px] text-slate-500 font-semibold uppercase px-1">Hình thức:</span>
+                        {[
+                          { id: 'all', label: 'Tất cả' },
+                          { id: 'bank_transfer', label: 'Chuyển khoản' },
+                          { id: 'cod', label: 'COD' },
+                          { id: 'cash', label: 'Tiền mặt' },
+                        ].map((pm) => (
+                          <button
+                            key={pm.id}
+                            onClick={() => setPaymentMethodFilter(pm.id)}
+                            className={`px-2 py-0.5 rounded font-semibold text-[11px] transition ${
+                              paymentMethodFilter === pm.id
+                                ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            {pm.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
 
-                              {(o.status === 'completed' || o.status === 'cancelled') && (
-                                <span className="text-slate-400 font-mono text-[11px] flex items-center justify-center">
-                                  <Lock className="w-3 h-3 mr-1" /> Khóa
-                                </span>
-                              )}
-                            </div>
+                  {/* Order Status Filters */}
+                  <div className="flex items-center space-x-1.5 overflow-x-auto text-xs pt-1">
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold mr-1">Vòng đời đơn:</span>
+                    {(['all', 'pending', 'confirmed', 'completed', 'cancelled'] as const).map((st) => (
+                      <button
+                        key={st}
+                        onClick={() => setStatusFilter(st)}
+                        className={`px-2.5 py-1 rounded-md font-semibold capitalize transition ${
+                          statusFilter === st
+                            ? 'bg-blue-600 text-white shadow-2xs'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {st === 'all'
+                          ? 'Tất cả'
+                          : st === 'pending'
+                          ? 'Chờ duyệt'
+                          : st === 'confirmed'
+                          ? 'Đã xác nhận'
+                          : st === 'completed'
+                          ? 'Hoàn tất'
+                          : 'Đã hủy'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Orders Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
+                      <tr>
+                        <th className="py-3 px-3">Mã đơn hàng</th>
+                        <th className="py-3 px-3">Khách hàng</th>
+                        <th className="py-3 px-3">Hình thức</th>
+                        <th className="py-3 px-3">Thanh toán & Mã GD</th>
+                        <th className="py-3 px-3 text-right">Tổng tiền</th>
+                        <th className="py-3 px-3">Vòng đời</th>
+                        <th className="py-3 px-3 text-center">Thao tác phê duyệt</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      {filteredOrders.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-slate-400">
+                            Không có đơn hàng nào khớp bộ lọc tra cứu.
                           </td>
                         </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                      ) : (
+                        filteredOrders.map((o) => {
+                          const cust = customers.find((c) => c.id === o.customerId);
+                          const isPaid = o.paymentStatus === 'paid';
+
+                          return (
+                            <tr key={o.id} className="hover:bg-slate-50/80 transition">
+                              {/* Order Number & Created At */}
+                              <td className="py-3 px-3 font-mono">
+                                <div className="font-bold text-slate-900">{o.orderNumber}</div>
+                                <div className="text-[10px] text-slate-400">
+                                  {new Date(o.createdAt).toLocaleString('vi-VN')}
+                                </div>
+                              </td>
+
+                              {/* Customer */}
+                              <td className="py-3 px-3">
+                                <div className="font-semibold text-slate-900">{cust?.name || 'Khách vãng lai'}</div>
+                                <div className="text-[11px] font-mono text-slate-500">{cust?.phone}</div>
+                              </td>
+
+                              {/* Payment Method Badge */}
+                              <td className="py-3 px-3">
+                                {o.paymentMethod === 'bank_transfer' ? (
+                                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-semibold">
+                                    <Building className="w-3 h-3 text-blue-600" />
+                                    <span>Chuyển khoản</span>
+                                  </span>
+                                ) : o.paymentMethod === 'cod' ? (
+                                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-semibold">
+                                    <Truck className="w-3 h-3 text-slate-600" />
+                                    <span>COD</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-semibold">
+                                    <Banknote className="w-3 h-3 text-slate-600" />
+                                    <span>Tiền mặt</span>
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Payment Status */}
+                              <td className="py-3 px-3">
+                                {isPaid ? (
+                                  <div className="space-y-0.5">
+                                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                      <Check className="w-3 h-3 text-emerald-600" />
+                                      <span>Đã thanh toán</span>
+                                    </span>
+                                    {o.paidAt && (
+                                      <div className="font-mono text-[9px] text-slate-400">
+                                        {new Date(o.paidAt).toLocaleTimeString('vi-VN')}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                                    <Clock className="w-3 h-3 text-amber-600" />
+                                    <span>Chưa thanh toán</span>
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Total Amount */}
+                              <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">
+                                {formatVND(o.totalAmount)}
+                              </td>
+
+                              {/* Order Lifecycle Status */}
+                              <td className="py-3 px-3">
+                                <span
+                                  className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                    o.status === 'completed'
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      : o.status === 'confirmed'
+                                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                      : o.status === 'pending'
+                                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                      : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  }`}
+                                >
+                                  {o.status === 'completed'
+                                    ? 'Hoàn tất'
+                                    : o.status === 'confirmed'
+                                    ? 'Đã xác nhận'
+                                    : o.status === 'pending'
+                                    ? 'Chờ duyệt'
+                                    : 'Đã hủy'}
+                                </span>
+                              </td>
+
+                              {/* Action Buttons */}
+                              <td className="py-3 px-3 text-center">
+                                <div className="flex items-center justify-center space-x-1.5 flex-wrap gap-y-1">
+                                  {/* Manual Payment Confirmation (Role Guarded) */}
+                                  {!isPaid && (currentUser.role === 'admin' || currentUser.role === 'sale') && (
+                                    <button
+                                      onClick={() => {
+                                        mockDb.markOrderPaid(o.id);
+                                        refreshData();
+                                      }}
+                                      title="Xác nhận khách đã thanh toán"
+                                      className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded text-[10px] font-semibold transition cursor-pointer"
+                                    >
+                                      Xác nhận TT
+                                    </button>
+                                  )}
+
+                                  {o.status === 'pending' && (
+                                    <button
+                                      onClick={() => handleTransition(o.id, 'confirmed')}
+                                      className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-semibold transition"
+                                    >
+                                      Duyệt xác nhận
+                                    </button>
+                                  )}
+
+                                  {o.status === 'confirmed' && (
+                                    <button
+                                      onClick={() => handleTransition(o.id, 'completed')}
+                                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-semibold transition"
+                                    >
+                                      Hoàn tất giao máy
+                                    </button>
+                                  )}
+
+                                  {(o.status === 'pending' || o.status === 'confirmed') && (
+                                    <button
+                                      onClick={() => {
+                                        setCancelReasonInput('');
+                                        setCancellingOrderId(o.id);
+                                      }}
+                                      className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-medium border border-rose-200 transition"
+                                    >
+                                      Hủy
+                                    </button>
+                                  )}
+
+                                  {(o.status === 'completed' || o.status === 'cancelled') && (
+                                    <span className="text-slate-400 font-mono text-[11px] flex items-center justify-center">
+                                      <Lock className="w-3 h-3 mr-1" /> Khóa
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
           </div>
         )}
       </div>
@@ -792,7 +1161,7 @@ export const PosView: React.FC = () => {
           <div className="bg-white max-w-lg w-full rounded-xl shadow-2xl p-6 text-xs font-mono space-y-4 border border-slate-200">
             <div className="flex justify-between items-start pb-3 border-b border-slate-200">
               <div>
-                <h4 className="font-bold text-sm text-slate-900 font-display">COMPUTERTECH RETAIL INVOICE</h4>
+                <h4 className="font-bold text-sm text-slate-900 font-display">HÓA ĐƠN BÁN LẺ COMPUTERTECH</h4>
                 <div className="text-[11px] text-slate-500">Mã đơn: {lastCompletedOrder.order.orderNumber}</div>
               </div>
               <button

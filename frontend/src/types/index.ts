@@ -65,7 +65,7 @@ export interface Inventory {
 
 export type OrderStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 export type PaymentStatus = 'unpaid' | 'paid' | 'refunded';
-export type PaymentMethod = 'cash' | 'bank_transfer' | 'card';
+export type PaymentMethod = 'cash' | 'bank_transfer' | 'card' | 'cod';
 
 export interface Order {
   id: string;
@@ -79,6 +79,7 @@ export interface Order {
   paymentMethod: PaymentMethod;
   pricingStrategyName: string;
   notes?: string;
+  paidAt?: string;
   createdAt: string;
   updatedAt: string;
 }

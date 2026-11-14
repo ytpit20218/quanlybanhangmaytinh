@@ -37,7 +37,7 @@ export const TechnicianLayout: React.FC = () => {
   };
 
   const navLinks = [
-    { to: '/technician/tickets', label: 'Diagnostic Bench Queue', icon: <Wrench className="w-4 h-4" /> },
+    { to: '/technician/tickets', label: 'Hàng đợi Kiểm định & Sửa chữa', icon: <Wrench className="w-4 h-4" /> },
   ];
 
   return (
@@ -56,7 +56,7 @@ export const TechnicianLayout: React.FC = () => {
                   COMPUTER<span className="text-purple-700">TECH</span>
                 </div>
                 <div className="text-[10px] text-m3-on-surface-variant font-mono tracking-wider uppercase mt-0.5">
-                  Hardware Diagnostic Lab
+                  Phòng Kỹ Thuật & Bảo Hành
                 </div>
               </div>
             </Link>
@@ -82,36 +82,36 @@ export const TechnicianLayout: React.FC = () => {
             </nav>
 
             {/* Right Profile & Ticket Badge Controls */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 shrink-0">
               <Link
                 to="/store"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-m3-full border border-m3-outline-variant hover:bg-m3-surface-container text-m3-on-surface transition"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-m3-full border border-m3-outline-variant hover:bg-m3-surface-container text-m3-on-surface transition whitespace-nowrap shrink-0"
               >
-                <Store className="w-3.5 h-3.5" />
-                <span>Xem Cửa hàng</span>
+                <Store className="w-3.5 h-3.5 shrink-0" />
+                <span className="whitespace-nowrap">Xem Cửa hàng</span>
               </Link>
 
               {activeTicketsCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-purple-800 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-m3-full">
-                  <Wrench className="w-3.5 h-3.5 text-purple-600" />
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-purple-800 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-m3-full whitespace-nowrap shrink-0">
+                  <Wrench className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                   <span>{activeTicketsCount} thiết bị đang xử lý</span>
                 </span>
               )}
 
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   onClick={() => setShowProfile(!showProfile)}
-                  className="flex items-center gap-2 p-1.5 rounded-m3-full hover:bg-m3-surface-container border border-m3-outline-variant/60 transition"
+                  className="flex items-center gap-2 p-1.5 rounded-m3-full hover:bg-m3-surface-container border border-m3-outline-variant/60 transition shrink-0"
                 >
                   <img
                     src={user?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'}
                     alt={user?.name}
-                    className="w-7 h-7 rounded-m3-full object-cover border border-slate-300"
+                    className="w-7 h-7 rounded-m3-full object-cover border border-slate-300 shrink-0"
                   />
-                  <div className="hidden sm:block text-left pr-1">
-                    <div className="text-xs font-semibold text-m3-on-surface leading-none">{user?.name}</div>
-                    <div className="text-[10px] text-purple-700 font-mono font-bold mt-0.5 uppercase">
-                      Diagnostic Specialist
+                  <div className="hidden sm:block text-left pr-1 min-w-0">
+                    <div className="text-xs font-semibold text-m3-on-surface leading-tight whitespace-nowrap truncate max-w-[140px]">{user?.name}</div>
+                    <div className="text-[10px] text-purple-700 font-mono font-bold mt-0.5 uppercase whitespace-nowrap">
+                      Chuyên viên Kỹ thuật
                     </div>
                   </div>
                 </button>
@@ -122,7 +122,7 @@ export const TechnicianLayout: React.FC = () => {
                       <div className="font-semibold text-m3-on-surface">{user?.name}</div>
                       <div className="text-[11px] text-m3-on-surface-variant font-mono">{user?.email}</div>
                       <span className="inline-block mt-1 px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-m3-xs border border-purple-200">
-                        Hardware Diagnostic Lead
+                        Kỹ thuật viên Trưởng
                       </span>
                     </div>
 
@@ -132,7 +132,7 @@ export const TechnicianLayout: React.FC = () => {
                         className="w-full px-3 py-2 text-left text-m3-error hover:bg-m3-error-container/40 rounded-m3-sm flex items-center gap-2 transition font-medium"
                       >
                         <LogOut className="w-3.5 h-3.5" />
-                        <span>Sign Out</span>
+                        <span>Đăng xuất</span>
                       </button>
                     </div>
                   </div>

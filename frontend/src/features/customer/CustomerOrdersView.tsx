@@ -19,6 +19,7 @@ import { mockDb } from '../../services/mockDatabase';
 import { useAuth } from '../../state/AuthContext';
 import { useApp } from '../../state/AppContext';
 import { Order, OrderItem } from '../../types';
+import { BankTransferQrCard } from '../../components/payment/BankTransferQrCard';
 
 export const CustomerOrdersView: React.FC = () => {
   const { user } = useAuth();
@@ -43,13 +44,13 @@ export const CustomerOrdersView: React.FC = () => {
         <div>
           <div className="inline-flex items-center space-x-2 text-xs font-semibold text-blue-600 mb-1">
             <ShoppingBag className="w-4 h-4" />
-            <span>CONFIDENTIAL CUSTOMER PORTAL</span>
+            <span>CỔNG KHÁCH HÀNG THÀNH VIÊN</span>
           </div>
           <h1 className="font-display font-bold text-2xl sm:text-3xl text-slate-900 tracking-tight">
-            My Purchase & Requisition History
+            Lịch Sử Đơn Hàng & Mua Sắm Cá Nhân
           </h1>
           <p className="text-xs text-slate-500 font-mono mt-1">
-            Account: {user?.name} • ID: {customerId || 'GUEST'}
+            Tài khoản: {user?.name} • Mã KH: {customerId || 'Khách vãng lai'}
           </p>
         </div>
 
@@ -57,7 +58,7 @@ export const CustomerOrdersView: React.FC = () => {
           to="/store"
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center space-x-1.5 self-start"
         >
-          <span>Shop More Hardware</span>
+          <span>Mua sắm thêm linh kiện</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
@@ -140,14 +141,14 @@ export const CustomerOrdersView: React.FC = () => {
                               : 'bg-rose-50 text-rose-700 border border-rose-200'
                           }`}
                         >
-                          {order.status}
+                          {order.status === 'completed' ? 'Hoàn tất' : order.status === 'confirmed' ? 'Đã xác nhận' : order.status === 'pending' ? 'Chờ duyệt' : 'Đã hủy'}
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right font-mono font-bold text-slate-900">
                         {formatVND(order.totalAmount)}
                       </td>
                       <td className="py-4 px-6 font-mono uppercase text-[11px] text-slate-500">
-                        {order.paymentMethod}
+                        {order.paymentMethod === 'cash' ? 'Tiền mặt' : order.paymentMethod === 'card' ? 'Thẻ / POS' : 'Chuyển khoản'}
                       </td>
                       <td className="py-4 px-6 text-center">
                         <button
@@ -210,6 +211,17 @@ export const CustomerOrdersView: React.FC = () => {
                 Tổng thanh toán: {formatVND(selectedOrder.totalAmount)}
               </div>
             </div>
+
+            {selectedOrder.paymentMethod === 'bank_transfer' && selectedOrder.paymentStatus !== 'paid' && (
+              <div className="pt-2">
+                <BankTransferQrCard
+                  orderNumber={selectedOrder.orderNumber}
+                  amount={selectedOrder.totalAmount}
+                  customerName={user?.name}
+                  compact={true}
+                />
+              </div>
+            )}
 
             <div className="pt-2 flex justify-end">
               <button

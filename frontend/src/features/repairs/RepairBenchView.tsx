@@ -96,12 +96,12 @@ export const RepairBenchView: React.FC = () => {
   const ticketCustomer = customers.find((c) => c.id === selectedTicket?.customerId);
 
   const statuses: Array<{ id: RepairStatus; label: string; step: number }> = [
-    { id: 'intake', label: '1. Intake', step: 1 },
-    { id: 'diagnosing', label: '2. Diagnosing', step: 2 },
-    { id: 'waiting_parts', label: '3. Awaiting Parts', step: 3 },
-    { id: 'in_progress', label: '4. In Repair', step: 4 },
-    { id: 'repaired', label: '5. Repaired', step: 5 },
-    { id: 'handed_over', label: '6. Handed Over', step: 6 },
+    { id: 'intake', label: '1. Tiếp nhận', step: 1 },
+    { id: 'diagnosing', label: '2. Chẩn đoán', step: 2 },
+    { id: 'waiting_parts', label: '3. Chờ linh kiện', step: 3 },
+    { id: 'in_progress', label: '4. Đang sửa', step: 4 },
+    { id: 'repaired', label: '5. Đã sửa xong', step: 5 },
+    { id: 'handed_over', label: '6. Đã bàn giao', step: 6 },
   ];
 
   // Filtered tickets
@@ -191,7 +191,7 @@ export const RepairBenchView: React.FC = () => {
       return;
     }
 
-    setPartSuccess('Spare part successfully issued and deducted from stock.');
+    setPartSuccess('Xuất linh kiện thành công và đã trừ tồn kho.');
     setPartQuantity(1);
     setPartNotes('');
     refreshData();
@@ -209,14 +209,14 @@ export const RepairBenchView: React.FC = () => {
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-base font-semibold text-slate-900">
-                  Diagnostic Bench & Hardware Repair Lab
+                  Phòng Kỹ Thuật & Sửa Chữa (Diagnostic Lab & Bench)
                 </h1>
                 <span className="text-[11px] font-medium px-2 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200">
-                  Bench Operations
+                  Quy trình Kỹ thuật
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Hardware Diagnostics • Component Re-balling & Replacement • State Progression (BR.07)
+                Chẩn đoán phần cứng • Thay thế linh kiện • Chu trình xử lý phiếu (BR.07)
               </p>
             </div>
           </div>
@@ -226,7 +226,7 @@ export const RepairBenchView: React.FC = () => {
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md shadow-sm transition flex items-center space-x-1.5 self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" />
-            <span>Intake New Device</span>
+            <span>Tiếp nhận thiết bị (Intake New Device)</span>
           </button>
         </div>
       </div>
@@ -238,20 +238,20 @@ export const RepairBenchView: React.FC = () => {
             {/* Filter */}
             <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-900">
-                Bench Queue ({filteredTickets.length})
+                Hàng đợi kiểm định ({filteredTickets.length})
               </span>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
                 className="bg-white border border-slate-300 text-slate-700 text-xs rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
-                <option value="all">ALL STAGES</option>
-                <option value="intake">INTAKE</option>
-                <option value="diagnosing">DIAGNOSING</option>
-                <option value="waiting_parts">WAITING PARTS</option>
-                <option value="in_progress">IN PROGRESS</option>
-                <option value="repaired">REPAIRED</option>
-                <option value="handed_over">HANDED OVER</option>
+                <option value="all">TẤT CẢ GIAI ĐOẠN</option>
+                <option value="intake">TIẾP NHẬN</option>
+                <option value="diagnosing">CHẨN ĐOÁN</option>
+                <option value="waiting_parts">CHỜ LINH KIỆN</option>
+                <option value="in_progress">ĐANG XỬ LÝ</option>
+                <option value="repaired">ĐÃ SỬA XONG</option>
+                <option value="handed_over">ĐÃ BÀN GIAO</option>
               </select>
             </div>
 
@@ -260,6 +260,12 @@ export const RepairBenchView: React.FC = () => {
               {filteredTickets.map((t) => {
                 const isSelected = t.id === selectedTicket?.id;
                 const cust = customers.find((c) => c.id === t.customerId);
+                const statusLabel =
+                  t.status === 'intake' ? 'Tiếp nhận' :
+                  t.status === 'diagnosing' ? 'Chẩn đoán' :
+                  t.status === 'waiting_parts' ? 'Chờ LK' :
+                  t.status === 'in_progress' ? 'Đang sửa' :
+                  t.status === 'repaired' ? 'Đã xong' : 'Đã giao';
 
                 return (
                   <div
@@ -288,7 +294,7 @@ export const RepairBenchView: React.FC = () => {
                             : 'bg-slate-100 text-slate-700 border border-slate-200'
                         }`}
                       >
-                        {t.status.replace('_', ' ')}
+                        {statusLabel}
                       </span>
                     </div>
 
@@ -297,7 +303,7 @@ export const RepairBenchView: React.FC = () => {
                     </div>
 
                     <div className="text-[11px] font-mono text-slate-500 mt-0.5">
-                      SN: {t.serialNumber} • Client: {cust?.name}
+                      Serial: {t.serialNumber} • Khách: {cust?.name}
                     </div>
 
                     <div className="text-[11px] text-slate-600 mt-1 line-clamp-1 italic">
@@ -333,12 +339,12 @@ export const RepairBenchView: React.FC = () => {
                     </div>
 
                     <div className="text-left md:text-right">
-                      <div className="text-[11px] text-slate-500 uppercase font-medium">Final Repair Cost</div>
+                      <div className="text-[11px] text-slate-500 uppercase font-medium">Tổng chi phí sửa chữa</div>
                       <div className="text-lg font-bold text-slate-900 font-mono-num">
                         {formatVND(selectedTicket.finalCost)}
                       </div>
                       <div className="text-[11px] text-slate-500">
-                        Labor: {formatVND(selectedTicket.laborFee)} • Parts: {formatVND(selectedTicket.finalCost - selectedTicket.laborFee)}
+                        Tiền công: {formatVND(selectedTicket.laborFee)} • Linh kiện: {formatVND(selectedTicket.finalCost - selectedTicket.laborFee)}
                       </div>
                     </div>
                   </div>
@@ -346,7 +352,7 @@ export const RepairBenchView: React.FC = () => {
                   {/* Status Progression Stepper */}
                   <div className="py-5 border-b border-slate-200">
                     <div className="text-xs font-medium text-slate-700 mb-2.5 flex items-center justify-between">
-                      <span>Repair Lifecycle State Machine (BR.07)</span>
+                      <span>Quy trình trạng thái sửa chữa (BR.07)</span>
                       <span className="text-blue-700 font-semibold uppercase text-[11px]">{selectedTicket.status}</span>
                     </div>
 
@@ -372,7 +378,7 @@ export const RepairBenchView: React.FC = () => {
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
                       <input
                         type="text"
-                        placeholder="Audit transition note / findings..."
+                        placeholder="Ghi chú chuyển trạng thái / kết quả kiểm tra..."
                         value={transitionReason}
                         onChange={(e) => setTransitionReason(e.target.value)}
                         className="flex-1 min-w-[200px] text-xs bg-slate-50 border border-slate-300 rounded-md px-3 py-1.5 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -384,22 +390,22 @@ export const RepairBenchView: React.FC = () => {
                             onClick={() => handleAdvanceStatus('diagnosing')}
                             className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium shadow-sm transition"
                           >
-                            Begin Diagnostics ➔
+                            Bắt đầu chẩn đoán ➔
                           </button>
                         )}
                         {selectedTicket.status === 'diagnosing' && (
                           <>
                             <button
                               onClick={() => handleAdvanceStatus('waiting_parts')}
-                              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-xs font-medium shadow-sm transition"
+                              className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-xs font-medium shadow-sm transition"
                             >
-                              Wait for Parts
+                              Chờ linh kiện
                             </button>
                             <button
                               onClick={() => handleAdvanceStatus('in_progress')}
                               className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium shadow-sm transition"
                             >
-                              Start Repair ➔
+                              Bắt đầu sửa chữa ➔
                             </button>
                           </>
                         )}
@@ -408,7 +414,7 @@ export const RepairBenchView: React.FC = () => {
                             onClick={() => handleAdvanceStatus('in_progress')}
                             className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium shadow-sm transition"
                           >
-                            Parts Received ➔ Resume
+                            Đã có linh kiện ➔ Tiếp tục
                           </button>
                         )}
                         {selectedTicket.status === 'in_progress' && (
@@ -416,7 +422,7 @@ export const RepairBenchView: React.FC = () => {
                             onClick={() => handleAdvanceStatus('repaired')}
                             className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-medium shadow-sm transition"
                           >
-                            Mark Repaired (BR.07)
+                            Xác nhận sửa xong (BR.07)
                           </button>
                         )}
                         {selectedTicket.status === 'repaired' && (
@@ -424,12 +430,12 @@ export const RepairBenchView: React.FC = () => {
                             onClick={() => handleAdvanceStatus('handed_over')}
                             className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium shadow-sm transition"
                           >
-                            Client Handover (BR.07)
+                            Bàn giao trả khách (BR.07)
                           </button>
                         )}
                         {selectedTicket.status === 'handed_over' && (
                           <span className="text-xs text-emerald-700 font-semibold px-2 py-1 bg-emerald-50 rounded border border-emerald-200">
-                            Ticket Completed & Handed Over
+                            Phiếu đã hoàn tất & bàn giao
                           </span>
                         )}
                       </div>
@@ -447,7 +453,7 @@ export const RepairBenchView: React.FC = () => {
                   <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200">
                       <div className="text-[11px] font-semibold text-slate-500 uppercase mb-1">
-                        Reported Customer Issue (Intake)
+                        Hiện tượng lỗi khách báo (Tiếp nhận BR.06)
                       </div>
                       <p className="text-xs text-slate-800 leading-relaxed font-medium">
                         "{selectedTicket.issueDescription}"
@@ -457,7 +463,7 @@ export const RepairBenchView: React.FC = () => {
                     <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200">
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase">
-                          Technician Diagnostic Notes
+                          Ghi chú chẩn đoán kỹ thuật
                         </span>
                         {!isEditingNotes && (
                           <button
@@ -467,7 +473,7 @@ export const RepairBenchView: React.FC = () => {
                             }}
                             className="text-blue-600 hover:underline text-[11px] font-medium"
                           >
-                            Edit Note
+                            Chỉnh sửa
                           </button>
                         )}
                       </div>
@@ -476,7 +482,7 @@ export const RepairBenchView: React.FC = () => {
                         <div className="space-y-2 mt-1">
                           <textarea
                             rows={3}
-                            placeholder="Enter diagnostic bench notes, measurements, or findings..."
+                            placeholder="Nhập ghi chú chẩn đoán kỹ thuật, đo đạc linh kiện hoặc kết luận..."
                             value={editNotes}
                             onChange={(e) => setEditNotes(e.target.value)}
                             className="w-full text-xs p-2 bg-white border border-slate-300 rounded-md text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -486,19 +492,19 @@ export const RepairBenchView: React.FC = () => {
                               onClick={handleSaveDiagnosticNotes}
                               className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium"
                             >
-                              Save Note
+                              Lưu ghi chú (Save Note)
                             </button>
                             <button
                               onClick={() => setIsEditingNotes(false)}
                               className="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-xs"
                             >
-                              Cancel
+                              Hủy
                             </button>
                           </div>
                         </div>
                       ) : (
                         <p className="text-xs text-slate-800 leading-relaxed">
-                          {selectedTicket.diagnosticNotes || 'No notes documented yet.'}
+                          {selectedTicket.diagnosticNotes || 'Chưa có ghi chú chẩn đoán.'}
                         </p>
                       )}
                     </div>
@@ -511,11 +517,11 @@ export const RepairBenchView: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <Package className="w-4 h-4 text-blue-600" />
                       <h3 className="font-semibold text-sm text-slate-900">
-                        Spare Parts Requisition & Stock Consumption (BR.08)
+                        Xuất Kho & Thay Thế Linh Kiện Phần Cứng (BR.08)
                       </h3>
                     </div>
                     <span className="text-xs text-slate-500">
-                      Auto-validated with real-time warehouse inventory
+                      Tự động kiểm tra và trừ tồn kho thời gian thực
                     </span>
                   </div>
 
@@ -536,7 +542,7 @@ export const RepairBenchView: React.FC = () => {
                   {/* Parts Requisition Form */}
                   <form onSubmit={handleIssuePart} className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-5 bg-slate-50 p-3.5 rounded-lg border border-slate-200 text-xs">
                     <div className="md:col-span-5">
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Select Part from Inventory</label>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Chọn linh kiện từ kho</label>
                       <select
                         value={selectedPartId}
                         onChange={(e) => setSelectedPartId(e.target.value)}
@@ -547,7 +553,7 @@ export const RepairBenchView: React.FC = () => {
                           const avail = inv ? Math.max(0, inv.quantityOnHand - inv.quantityReserved) : 0;
                           return (
                             <option key={p.id} value={p.id}>
-                              {p.sku} • {p.name} ({avail} avail)
+                              {p.sku} • {p.name} (còn {avail})
                             </option>
                           );
                         })}
@@ -555,7 +561,7 @@ export const RepairBenchView: React.FC = () => {
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Qty</label>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">SL</label>
                       <input
                         type="number"
                         min="1"
@@ -566,10 +572,10 @@ export const RepairBenchView: React.FC = () => {
                     </div>
 
                     <div className="md:col-span-3">
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Bench Note</label>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Ghi chú kỹ thuật</label>
                       <input
                         type="text"
-                        placeholder="e.g. Re-pasting, Thermal pad swap..."
+                        placeholder="vd: Tra keo tản nhiệt, thay pad..."
                         value={partNotes}
                         onChange={(e) => setPartNotes(e.target.value)}
                         className="w-full bg-white border border-slate-300 rounded-md px-2.5 py-1.5 text-slate-900 placeholder:text-slate-400"
@@ -581,7 +587,7 @@ export const RepairBenchView: React.FC = () => {
                         type="submit"
                         className="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition"
                       >
-                        Issue Part
+                        Xuất linh kiện
                       </button>
                     </div>
                   </form>
@@ -591,18 +597,18 @@ export const RepairBenchView: React.FC = () => {
                     <table className="w-full text-left text-xs">
                       <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-[10px] font-semibold">
                         <tr>
-                          <th className="py-2.5 px-3">Requisitioned Part</th>
-                          <th className="py-2.5 px-3">SKU</th>
-                          <th className="py-2.5 px-3 text-right">Unit Price</th>
-                          <th className="py-2.5 px-3 text-right">Qty</th>
-                          <th className="py-2.5 px-3 text-right">Subtotal</th>
+                          <th className="py-2.5 px-3">Linh kiện đã xuất</th>
+                          <th className="py-2.5 px-3">Mã SKU</th>
+                          <th className="py-2.5 px-3 text-right">Đơn giá</th>
+                          <th className="py-2.5 px-3 text-right">SL</th>
+                          <th className="py-2.5 px-3 text-right">Thành tiền</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-800">
                         {selectedTicket.partsUsed.length === 0 ? (
                           <tr>
                             <td colSpan={5} className="py-6 text-center text-slate-400">
-                              No spare parts consumed yet. Diagnostic inspection fee only.
+                              Chưa xuất linh kiện nào. Hiện chỉ tính phí dịch vụ kỹ thuật.
                             </td>
                           </tr>
                         ) : (
@@ -627,7 +633,7 @@ export const RepairBenchView: React.FC = () => {
                 <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm text-xs">
                   <div className="flex items-center space-x-2 pb-3 border-b border-slate-200 mb-4">
                     <History className="w-4 h-4 text-blue-600" />
-                    <h3 className="font-semibold text-sm text-slate-900">Diagnostic & Bench Audit History</h3>
+                    <h3 className="font-semibold text-sm text-slate-900">Lịch sử Kiểm toán Quy trình Sửa chữa</h3>
                   </div>
 
                   <div className="space-y-2.5">
@@ -639,11 +645,11 @@ export const RepairBenchView: React.FC = () => {
                             <span className="text-slate-900 font-medium">{h.notes}</span>
                             <span className="text-[11px] text-slate-500 font-mono">
                               {new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{' '}
-                              {new Date(h.timestamp).toLocaleDateString()}
+                              {new Date(h.timestamp).toLocaleDateString('vi-VN')}
                             </span>
                           </div>
                           <div className="text-[11px] text-slate-500 mt-0.5">
-                            Status Shift: [{h.previousStatus.toUpperCase()} ➔ {h.newStatus.toUpperCase()}] • Recorded by:{' '}
+                            Trạng thái: [{h.previousStatus.toUpperCase()} ➔ {h.newStatus.toUpperCase()}] • Ghi nhận bởi:{' '}
                             <span className="text-slate-700 font-medium">{h.actorName}</span>
                           </div>
                         </div>
@@ -654,7 +660,7 @@ export const RepairBenchView: React.FC = () => {
               </>
             ) : (
               <div className="bg-white p-12 text-center rounded-lg border border-slate-200 text-slate-400">
-                No active repair ticket selected.
+                Chưa chọn phiếu sửa chữa nào.
               </div>
             )}
           </div>
@@ -667,8 +673,8 @@ export const RepairBenchView: React.FC = () => {
           <div className="bg-white border border-slate-200 text-slate-800 max-w-lg w-full rounded-lg shadow-xl p-6 text-xs">
             <div className="flex justify-between items-center pb-3 border-b border-slate-200 mb-4">
               <div>
-                <h3 className="font-semibold text-base text-slate-900">Hardware Service Intake (BR.06)</h3>
-                <p className="text-xs text-slate-500">Register device for lab inspection & diagnostics</p>
+                <h3 className="font-semibold text-base text-slate-900">Tiếp Nhận Thiết Bị Sửa Chữa (BR.06)</h3>
+                <p className="text-xs text-slate-500">Đăng ký thiết bị vào phòng kỹ thuật để kiểm định & chẩn đoán</p>
               </div>
               <button
                 onClick={() => setIsNewTicketOpen(false)}
@@ -687,7 +693,7 @@ export const RepairBenchView: React.FC = () => {
 
             <form onSubmit={handleCreateIntake} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Customer Profile (BR.06)</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Khách hàng (BR.06)</label>
                 <select
                   value={intakeCustomerId}
                   onChange={(e) => setIntakeCustomerId(e.target.value)}
@@ -696,17 +702,17 @@ export const RepairBenchView: React.FC = () => {
                 >
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} ({c.phone}) — {c.tier.toUpperCase()} Member
+                      {c.name} ({c.phone}) — {c.tier === 'vip' ? 'Thành viên VIP' : 'Khách chuẩn'}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Device Model & Chassis</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Tên máy & Model thiết bị</label>
                 <input
                   type="text"
-                  placeholder="e.g. Dell XPS 16 / MacBook Pro 16 / ASUS ROG"
+                  placeholder="vd: Dell XPS 16 / MacBook Pro 16 / ASUS ROG Zephyrus"
                   value={intakeDevice}
                   onChange={(e) => setIntakeDevice(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -715,10 +721,10 @@ export const RepairBenchView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Hardware Serial Number (BR.06)</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Số Serial / IMEI phần cứng (BR.06)</label>
                 <input
                   type="text"
-                  placeholder="e.g. SN-ROG-8899"
+                  placeholder="vd: SN-ROG-8899"
                   value={intakeSerial}
                   onChange={(e) => setIntakeSerial(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 font-mono font-semibold uppercase placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -727,10 +733,10 @@ export const RepairBenchView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Customer Reported Issue (BR.06)</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Hiện tượng lỗi / Yêu cầu sửa chữa (BR.06)</label>
                 <textarea
                   rows={2}
-                  placeholder="e.g. Display backlight flickering at high refresh rate, system throttling..."
+                  placeholder="vd: Màn hình chớp nháy khi tải nặng, mất nguồn, sọc ngang..."
                   value={intakeIssue}
                   onChange={(e) => setIntakeIssue(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -739,10 +745,10 @@ export const RepairBenchView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Initial Check-in Notes (Optional)</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Ghi chú ngoại quan & Phụ kiện kèm theo (Không bắt buộc)</label>
                 <input
                   type="text"
-                  placeholder="e.g. Scratches on bottom chassis, power adapter included..."
+                  placeholder="vd: Đáy máy trầy nhẹ, kèm adapter sạc theo máy..."
                   value={intakeNotes}
                   onChange={(e) => setIntakeNotes(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -754,14 +760,14 @@ export const RepairBenchView: React.FC = () => {
                   type="submit"
                   className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition"
                 >
-                  Create Intake Ticket
+                  Tạo phiếu tiếp nhận (Create Intake Ticket)
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsNewTicketOpen(false)}
                   className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-md transition"
                 >
-                  Cancel
+                  Hủy bỏ
                 </button>
               </div>
             </form>

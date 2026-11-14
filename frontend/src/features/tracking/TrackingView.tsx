@@ -44,7 +44,7 @@ export const TrackingView: React.FC = () => {
 
     const q = lookupQuery.trim().toUpperCase();
     if (!q) {
-      setErrorMessage('Please enter an Order Number or Repair Ticket / Serial Number.');
+      setErrorMessage('Vui lòng nhập Mã đơn hàng hoặc Số phiếu / Serial.');
       return;
     }
 
@@ -56,7 +56,7 @@ export const TrackingView: React.FC = () => {
         setSearchedOrder(found);
         setSearchedItems(mockDb.getOrderItems(found.id));
       } else {
-        setErrorMessage(`Order "${lookupQuery}" not found. Try e.g. ORD-2026-1001.`);
+        setErrorMessage(`Không tìm thấy đơn hàng "${lookupQuery}". Hãy thử vd: ORD-2026-1001.`);
       }
     } else {
       const found = repairTickets.find(
@@ -70,7 +70,7 @@ export const TrackingView: React.FC = () => {
         setSearchedHistory(mockDb.getRepairHistories(found.id));
       } else {
         setErrorMessage(
-          `Repair ticket or Serial "${lookupQuery}" not found. Try e.g. RPR-2026-2001 or CT-CUSTOM-88219.`
+          `Không tìm thấy phiếu sửa chữa hoặc Serial "${lookupQuery}". Hãy thử vd: RPR-2026-2001 hoặc CT-CUSTOM-88219.`
         );
       }
     }
@@ -83,13 +83,13 @@ export const TrackingView: React.FC = () => {
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center space-x-2 px-3 py-1 bg-slate-800 rounded-full text-xs text-blue-400 mb-3 border border-slate-700 font-medium">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>TRANSPARENT HARDWARE AUDIT PORTAL</span>
+            <span>CỔNG TRA CỨU ĐƠN HÀNG & BẢO HÀNH MINH BẠCH</span>
           </div>
           <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-tight text-white">
-            Self-Service Order & Warranty Tracker
+            Tra Cứu Trực Tuyến Đơn Hàng & Tiến Trình Kỹ Thuật
           </h1>
           <p className="text-sm text-slate-400 mt-2">
-            Verify real-time warehouse fulfillment, component reservation, and lab diagnosis telemetry
+            Kiểm tra tình trạng xuất kho, giữ chỗ linh kiện và tiến độ kiểm định bảo hành thời gian thực
           </p>
 
           {/* Mode Switcher */}
@@ -106,7 +106,7 @@ export const TrackingView: React.FC = () => {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Order Status Tracking
+              Tra cứu đơn hàng
             </button>
             <button
               onClick={() => {
@@ -120,7 +120,7 @@ export const TrackingView: React.FC = () => {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Warranty & Bench Telemetry
+              Tra cứu bảo hành & Sửa chữa
             </button>
           </div>
 
@@ -132,8 +132,8 @@ export const TrackingView: React.FC = () => {
                 type="text"
                 placeholder={
                   trackingMode === 'order'
-                    ? 'Enter Order ID (e.g. ORD-2026-1001)...'
-                    : 'Enter Ticket # or Serial (e.g. RPR-2026-2001 / CT-CUSTOM-88219)...'
+                    ? 'Nhập mã đơn hàng (vd: ORD-2026-1001)...'
+                    : 'Nhập số phiếu hoặc Serial (vd: RPR-2026-2001 / CT-CUSTOM-88219)...'
                 }
                 value={lookupQuery}
                 onChange={(e) => setLookupQuery(e.target.value)}
@@ -144,13 +144,13 @@ export const TrackingView: React.FC = () => {
               type="submit"
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition shadow-sm"
             >
-              LOCATE
+              TRA CỨU
             </button>
           </form>
 
           {/* Quick Examples for User Convenience */}
           <div className="mt-3 text-xs font-mono text-slate-400 flex flex-wrap items-center justify-center gap-2">
-            <span>Quick test:</span>
+            <span>Mẫu thử nhanh:</span>
             {trackingMode === 'order' ? (
               <>
                 <button
@@ -205,7 +205,7 @@ export const TrackingView: React.FC = () => {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6 animate-fade-in">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-slate-100 gap-2">
               <div>
-                <span className="font-mono text-xs uppercase text-slate-400 font-semibold">Order Verification</span>
+                <span className="font-mono text-xs uppercase text-slate-400 font-semibold">Xác minh Đơn hàng</span>
                 <h2 className="font-display font-bold text-2xl text-slate-900 mt-0.5">
                   {searchedOrder.orderNumber}
                 </h2>
@@ -222,7 +222,7 @@ export const TrackingView: React.FC = () => {
                       : 'bg-rose-50 text-rose-700 border border-rose-200'
                   }`}
                 >
-                  {searchedOrder.status}
+                  {searchedOrder.status === 'completed' ? 'Hoàn tất' : searchedOrder.status === 'confirmed' ? 'Đã xác nhận' : searchedOrder.status === 'pending' ? 'Chờ duyệt' : 'Đã hủy'}
                 </span>
               </div>
             </div>
@@ -237,8 +237,8 @@ export const TrackingView: React.FC = () => {
                       : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
                 >
-                  <div className="text-[10px] uppercase font-mono">Stage 1</div>
-                  <div className="mt-1">Order Placed</div>
+                  <div className="text-[10px] uppercase font-mono">Giai đoạn 1</div>
+                  <div className="mt-1">Đã đặt hàng</div>
                 </div>
 
                 <div
@@ -248,8 +248,8 @@ export const TrackingView: React.FC = () => {
                       : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
                 >
-                  <div className="text-[10px] uppercase font-mono">Stage 2</div>
-                  <div className="mt-1">Inventory Reserved</div>
+                  <div className="text-[10px] uppercase font-mono">Giai đoạn 2</div>
+                  <div className="mt-1">Đã giữ chỗ linh kiện</div>
                 </div>
 
                 <div
@@ -259,8 +259,8 @@ export const TrackingView: React.FC = () => {
                       : 'bg-slate-50 border-slate-200 text-slate-400'
                   }`}
                 >
-                  <div className="text-[10px] uppercase font-mono">Stage 3</div>
-                  <div className="mt-1">Fulfilled & Closed</div>
+                  <div className="text-[10px] uppercase font-mono">Giai đoạn 3</div>
+                  <div className="mt-1">Xuất kho & Hoàn tất</div>
                 </div>
               </div>
             </div>
@@ -269,7 +269,7 @@ export const TrackingView: React.FC = () => {
             <div>
               <h4 className="font-display font-bold text-sm text-slate-900 mb-3 flex items-center">
                 <Package className="w-4 h-4 text-blue-600 mr-1.5" />
-                <span>Components Manifest</span>
+                <span>Danh mục linh kiện & Sản phẩm</span>
               </h4>
               <div className="bg-slate-50 rounded-lg border border-slate-200 divide-y divide-slate-200 text-xs">
                 {searchedItems.map((item) => (
@@ -277,7 +277,7 @@ export const TrackingView: React.FC = () => {
                     <div>
                       <div className="font-bold text-slate-800">{item.productName}</div>
                       <div className="text-[11px] font-mono text-slate-500 mt-0.5">
-                        SKU: {item.productSku} • Qty: {item.quantity}
+                        Mã SKU: {item.productSku} • Số lượng: {item.quantity}
                       </div>
                     </div>
                     <div className="font-mono font-bold text-slate-900">
@@ -291,17 +291,17 @@ export const TrackingView: React.FC = () => {
             {/* Financial Summary */}
             <div className="bg-slate-900 text-white p-4 rounded-xl font-mono text-xs space-y-1">
               <div className="flex justify-between text-slate-400">
-                <span>Subtotal:</span>
+                <span>Tạm tính:</span>
                 <span>{formatVND(searchedOrder.subtotal)}</span>
               </div>
               {searchedOrder.discountAmount > 0 && (
                 <div className="flex justify-between text-emerald-400 font-bold">
-                  <span>Discount ({searchedOrder.pricingStrategyName}):</span>
+                  <span>Chiết khấu ({searchedOrder.pricingStrategyName}):</span>
                   <span>-{formatVND(searchedOrder.discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-slate-800">
-                <span>Total Amount:</span>
+                <span>Tổng cộng thanh toán:</span>
                 <span className="text-blue-400">{formatVND(searchedOrder.totalAmount)}</span>
               </div>
             </div>
@@ -313,42 +313,46 @@ export const TrackingView: React.FC = () => {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6 animate-fade-in">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-slate-100 gap-2">
               <div>
-                <span className="font-mono text-xs uppercase text-slate-400 font-semibold">Bench Ticket Diagnostic Record</span>
+                <span className="font-mono text-xs uppercase text-slate-400 font-semibold">Hồ sơ Kỹ thuật & Chẩn đoán Lab</span>
                 <h2 className="font-display font-bold text-2xl text-slate-900 mt-0.5">
                   {searchedTicket.ticketNumber}
                 </h2>
                 <div className="text-xs text-slate-500 mt-0.5">
-                  Device: <strong className="text-slate-800">{searchedTicket.deviceName}</strong> (SN:{' '}
+                  Thiết bị: <strong className="text-slate-800">{searchedTicket.deviceName}</strong> (Serial:{' '}
                   <strong className="text-blue-600 font-mono">{searchedTicket.serialNumber}</strong>)
                 </div>
               </div>
 
               <div className="flex items-center space-x-2">
                 <span className="px-3 py-1 rounded-md text-xs font-mono font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
-                  {searchedTicket.status.replace('_', ' ')}
+                  {searchedTicket.status === 'intake' ? 'Tiếp nhận' :
+                   searchedTicket.status === 'diagnosing' ? 'Chẩn đoán' :
+                   searchedTicket.status === 'waiting_parts' ? 'Chờ linh kiện' :
+                   searchedTicket.status === 'in_progress' ? 'Đang sửa' :
+                   searchedTicket.status === 'repaired' ? 'Đã sửa xong' : 'Đã bàn giao'}
                 </span>
               </div>
             </div>
 
             {/* Diagnostic Logs */}
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs space-y-2">
-              <div className="text-slate-500 uppercase text-[10px] font-bold">Reported Symptom:</div>
+              <div className="text-slate-500 uppercase text-[10px] font-bold">Hiện tượng lỗi khách báo:</div>
               <div className="text-slate-800 italic">"{searchedTicket.issueDescription}"</div>
 
-              <div className="text-slate-500 uppercase text-[10px] font-bold pt-2">Lab Diagnostic Telemetry:</div>
-              <div className="text-slate-900 font-semibold">{searchedTicket.diagnosticNotes}</div>
+              <div className="text-slate-500 uppercase text-[10px] font-bold pt-2">Kết quả chẩn đoán kỹ thuật:</div>
+              <div className="text-slate-900 font-semibold">{searchedTicket.diagnosticNotes || 'Đang cập nhật...'}</div>
             </div>
 
             {/* Requisitioned Spare Parts */}
             <div>
               <h4 className="font-display font-bold text-sm text-slate-900 mb-3 flex items-center">
                 <Wrench className="w-4 h-4 text-blue-600 mr-1.5" />
-                <span>Replacement Hardware & Parts Consumed</span>
+                <span>Linh kiện thay thế & Tiêu hao phần cứng</span>
               </h4>
               <div className="bg-slate-50 rounded-lg border border-slate-200 divide-y divide-slate-200 text-xs">
                 {searchedTicket.partsUsed.length === 0 ? (
                   <div className="p-4 text-slate-400 text-center">
-                    No replacement parts consumed. Standard diagnostic service rate.
+                    Chưa xuất linh kiện thay thế. Hiện tính phí dịch vụ kiểm định tiêu chuẩn.
                   </div>
                 ) : (
                   searchedTicket.partsUsed.map((p, i) => (
@@ -356,7 +360,7 @@ export const TrackingView: React.FC = () => {
                       <div>
                         <div className="font-bold text-slate-800">{p.productName}</div>
                         <div className="text-[11px] font-mono text-slate-500">
-                          SKU: {p.productSku} • Qty: {p.quantity}
+                          Mã SKU: {p.productSku} • Số lượng: {p.quantity}
                         </div>
                       </div>
                       <div className="font-mono font-bold text-blue-600">
@@ -372,7 +376,7 @@ export const TrackingView: React.FC = () => {
             <div>
               <h4 className="font-display font-bold text-sm text-slate-900 mb-3 flex items-center">
                 <History className="w-4 h-4 text-slate-600 mr-1.5" />
-                <span>Bench Activity History</span>
+                <span>Lịch sử Hoạt động & Xử lý Kỹ thuật</span>
               </h4>
               <div className="space-y-2 text-xs">
                 {searchedHistory.map((h) => (
@@ -380,12 +384,12 @@ export const TrackingView: React.FC = () => {
                     <div>
                       <div className="text-slate-800 font-medium">{h.notes}</div>
                       <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-                        Actor: {h.actorName} • Stage: {h.newStatus.toUpperCase()}
+                        Kỹ thuật viên: {h.actorName} • Trạng thái: {h.newStatus.toUpperCase()}
                       </div>
                     </div>
                     <div className="text-[11px] font-mono text-slate-400 whitespace-nowrap ml-4">
                       {new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{' '}
-                      {new Date(h.timestamp).toLocaleDateString()}
+                      {new Date(h.timestamp).toLocaleDateString('vi-VN')}
                     </div>
                   </div>
                 ))}

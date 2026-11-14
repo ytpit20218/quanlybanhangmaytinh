@@ -48,7 +48,7 @@ export const SalesCustomerRegistrationView: React.FC = () => {
     setSuccessMsg(null);
 
     if (!name.trim() || !phone.trim() || !email.trim()) {
-      setErrorMsg('Name, Phone, and Email are required.');
+      setErrorMsg('Vui lòng điền đầy đủ Họ tên, Số điện thoại và Email.');
       return;
     }
 
@@ -57,7 +57,7 @@ export const SalesCustomerRegistrationView: React.FC = () => {
       name: name.trim(),
       email: email.trim().toLowerCase(),
       phone: phone.trim(),
-      address: address.trim() || 'Ho Chi Minh City',
+      address: address.trim() || 'TP. Hồ Chí Minh',
       tier,
       createdAt: new Date().toISOString(),
     };
@@ -65,7 +65,7 @@ export const SalesCustomerRegistrationView: React.FC = () => {
     mockDb.addCustomer(newCust);
     refreshData();
 
-    setSuccessMsg(`Customer "${newCust.name}" registered successfully.`);
+    setSuccessMsg(`Đăng ký khách hàng "${newCust.name}" thành công.`);
     setName('');
     setEmail('');
     setPhone('');
@@ -84,13 +84,13 @@ export const SalesCustomerRegistrationView: React.FC = () => {
           <div>
             <div className="flex items-center space-x-2 text-blue-600 font-semibold text-xs mb-1">
               <UserPlus className="w-4 h-4" />
-              <span>SALES COUNTER CUSTOMER HUB</span>
+              <span>TRUNG TÂM KHÁCH HÀNG BÁN LẺ</span>
             </div>
             <h1 className="text-xl font-bold text-slate-900">
-              Client Accounts & Rapid Registration
+              Danh Bạ Khách Hàng & Đăng Ký Nhanh
             </h1>
             <p className="text-slate-500 text-xs mt-0.5">
-              Onboard new retail customers or lookup VIP account loyalty discounts
+              Đăng ký hồ sơ khách mua lẻ tại quầy hoặc tra cứu phân hạng ưu đãi VIP
             </p>
           </div>
 
@@ -99,7 +99,7 @@ export const SalesCustomerRegistrationView: React.FC = () => {
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-md shadow-sm transition flex items-center space-x-1.5 self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" />
-            <span>Register New Client</span>
+            <span>Đăng ký khách mới (Register New Client)</span>
           </button>
         </div>
       </div>
@@ -111,7 +111,7 @@ export const SalesCustomerRegistrationView: React.FC = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search name, phone, email..."
+              placeholder="Tìm theo tên, SĐT, email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
@@ -119,7 +119,7 @@ export const SalesCustomerRegistrationView: React.FC = () => {
           </div>
 
           <div className="text-xs text-slate-500">
-            Showing <strong className="text-slate-900 font-semibold">{filtered.length}</strong> registered clients
+            Hiển thị <strong className="text-slate-900 font-semibold">{filtered.length}</strong> khách hàng trong hệ thống
           </div>
         </div>
 
@@ -130,7 +130,7 @@ export const SalesCustomerRegistrationView: React.FC = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-semibold text-slate-900 text-sm">{c.name}</h3>
-                  <div className="text-xs text-blue-600 font-mono mt-0.5">Phone: {c.phone}</div>
+                  <div className="text-xs text-blue-600 font-mono mt-0.5">SĐT: {c.phone}</div>
                 </div>
                 <span
                   className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
@@ -139,7 +139,7 @@ export const SalesCustomerRegistrationView: React.FC = () => {
                       : 'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}
                 >
-                  {c.tier} Member
+                  {c.tier === 'vip' ? 'Thành viên VIP' : 'Khách chuẩn'}
                 </span>
               </div>
 
@@ -163,7 +163,7 @@ export const SalesCustomerRegistrationView: React.FC = () => {
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white border border-slate-200 text-slate-800 max-w-md w-full rounded-lg shadow-xl p-6 text-xs">
             <div className="flex justify-between items-center pb-3 border-b border-slate-200 mb-4">
-              <h3 className="font-semibold text-sm text-slate-900">Rapid Client Onboarding</h3>
+              <h3 className="font-semibold text-sm text-slate-900">Đăng ký Hồ sơ Khách hàng Mới</h3>
               <button
                 onClick={() => setIsRegisterOpen(false)}
                 className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
@@ -188,11 +188,11 @@ export const SalesCustomerRegistrationView: React.FC = () => {
 
             <form onSubmit={handleCreateCustomer} className="space-y-3.5">
               <div>
-                <label className="block text-slate-700 font-medium text-xs mb-1">Customer / Studio Name</label>
+                <label className="block text-slate-700 font-medium text-xs mb-1">Họ và tên khách hàng / Công ty</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Viet Tech Engineering"
+                  placeholder="e.g. Viet Tech Engineering / Nguyễn Văn A"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
@@ -200,7 +200,7 @@ export const SalesCustomerRegistrationView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-medium text-xs mb-1">Phone Number (Mandatory)</label>
+                <label className="block text-slate-700 font-medium text-xs mb-1">Số điện thoại liên hệ (Bắt buộc)</label>
                 <input
                   type="tel"
                   required
@@ -212,7 +212,7 @@ export const SalesCustomerRegistrationView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-medium text-xs mb-1">Email</label>
+                <label className="block text-slate-700 font-medium text-xs mb-1">Địa chỉ Email</label>
                 <input
                   type="email"
                   required
@@ -224,10 +224,10 @@ export const SalesCustomerRegistrationView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-medium text-xs mb-1">Delivery / Invoicing Address</label>
+                <label className="block text-slate-700 font-medium text-xs mb-1">Địa chỉ giao hàng / Hóa đơn</label>
                 <input
                   type="text"
-                  placeholder="e.g. 120 Le Loi, Dist 1, HCMC"
+                  placeholder="vd: 120 Lê Lợi, Quận 1, TP.HCM"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
@@ -235,14 +235,14 @@ export const SalesCustomerRegistrationView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-medium text-xs mb-1">Loyalty Tier</label>
+                <label className="block text-slate-700 font-medium text-xs mb-1">Hạng thành viên</label>
                 <select
                   value={tier}
                   onChange={(e) => setTier(e.target.value as CustomerTier)}
                   className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                 >
-                  <option value="standard">Standard (0% base discount)</option>
-                  <option value="vip">VIP Tier (5% automatic discount on all hardware)</option>
+                  <option value="standard">Khách Chuẩn (Standard - Không giảm giá)</option>
+                  <option value="vip">Thành viên VIP (Tự động giảm 5% toàn bộ linh kiện)</option>
                 </select>
               </div>
 
@@ -251,14 +251,14 @@ export const SalesCustomerRegistrationView: React.FC = () => {
                   type="submit"
                   className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition"
                 >
-                  Save & Register
+                  Lưu & Đăng ký (Save & Register)
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsRegisterOpen(false)}
                   className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-md transition"
                 >
-                  Cancel
+                  Hủy bỏ
                 </button>
               </div>
             </form>

@@ -44,7 +44,7 @@ export const WarehousePickingView: React.FC = () => {
     if (!res.success) {
       setActionError(res.errors.join(' | '));
     } else {
-      setActionSuccess(`Order ${res.order?.orderNumber} picked, inventory deducted, and dispatched.`);
+      setActionSuccess(`Đơn hàng ${res.order?.orderNumber} đã soạn xong, trừ tồn kho và xuất kho thành công.`);
       refreshData();
       setTimeout(() => setActionSuccess(null), 3000);
     }
@@ -60,13 +60,13 @@ export const WarehousePickingView: React.FC = () => {
           <div>
             <div className="flex items-center space-x-2 text-blue-600 font-semibold text-xs mb-1">
               <PackageCheck className="w-4 h-4" />
-              <span>WAREHOUSE DISPATCH HUB</span>
+              <span>TRUNG TÂM XUẤT KHO & ĐIỀU PHỐI</span>
             </div>
             <h1 className="text-xl font-bold text-slate-900">
-              Order Picking Queue & Physical Fulfillment
+              Hàng Đợi Soạn Hàng & Xuất Kho Thực Tế
             </h1>
             <p className="text-slate-500 text-xs mt-0.5">
-              Orders in [CONFIRMED] state have stock reserved. Pick hardware components and dispatch to complete order (BR.03, BR.05)
+              Đơn hàng ở trạng thái [ĐÃ XÁC NHẬN] đã giữ chỗ linh kiện. Tiến hành soạn hàng và xuất kho để hoàn tất đơn hàng (BR.03, BR.05)
             </p>
           </div>
 
@@ -81,7 +81,7 @@ export const WarehousePickingView: React.FC = () => {
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>Ready to Pick ({confirmedOrders.length})</span>
+              <span>Chờ soạn hàng ({confirmedOrders.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('dispatched')}
@@ -92,7 +92,7 @@ export const WarehousePickingView: React.FC = () => {
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Completed & Dispatched ({completedOrders.length})</span>
+              <span>Đã xuất kho ({completedOrders.length})</span>
             </button>
           </div>
         </div>
@@ -117,7 +117,7 @@ export const WarehousePickingView: React.FC = () => {
         <div className="space-y-4">
           {currentList.length === 0 ? (
             <div className="bg-white p-12 text-center rounded-lg border border-slate-200 text-slate-400 text-xs">
-              No orders found in this picking stage.
+              Không có đơn hàng nào ở giai đoạn này.
             </div>
           ) : (
             currentList.map((order) => {
@@ -141,19 +141,19 @@ export const WarehousePickingView: React.FC = () => {
                             : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         }`}
                       >
-                        {order.status === 'confirmed' ? 'Stock Reserved' : 'Fulfillment Complete'}
+                        {order.status === 'confirmed' ? 'Đã giữ chỗ linh kiện' : 'Xuất kho hoàn tất'}
                       </span>
                     </div>
 
                     <div className="text-slate-500 font-mono text-[11px]">
-                      Created: {new Date(order.createdAt).toLocaleString()} • Recipient: <strong className="text-slate-800">{cust?.name}</strong> ({cust?.phone})
+                      Thời gian tạo: {new Date(order.createdAt).toLocaleString('vi-VN')} • Người nhận: <strong className="text-slate-800">{cust?.name}</strong> ({cust?.phone})
                     </div>
                   </div>
 
                   {/* Line Items to Pick */}
                   <div className="bg-slate-50 rounded-lg p-3.5 border border-slate-200 space-y-2">
                     <div className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
-                      Components to Pick & Verify from Bays:
+                      Linh kiện cần soạn & kiểm tra theo kệ kho:
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                       {items.map((it) => (
@@ -173,7 +173,7 @@ export const WarehousePickingView: React.FC = () => {
                   {/* Footer & Action */}
                   <div className="flex flex-col sm:flex-row justify-between sm:items-center pt-1 gap-3">
                     <div className="text-slate-500">
-                      Destination Address: <strong className="text-slate-800">{cust?.address}</strong>
+                      Địa chỉ giao nhận: <strong className="text-slate-800">{cust?.address}</strong>
                     </div>
 
                     {order.status === 'confirmed' && (
@@ -182,7 +182,7 @@ export const WarehousePickingView: React.FC = () => {
                         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-md shadow-sm transition flex items-center space-x-1.5 self-start sm:self-auto"
                       >
                         <PackageCheck className="w-4 h-4" />
-                        <span>Pick Hardware & Dispatch (BR.03)</span>
+                        <span>Soạn hàng & Xuất kho (Pick & Dispatch BR.03)</span>
                       </button>
                     )}
                   </div>

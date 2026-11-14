@@ -48,44 +48,45 @@ export const AdminLayout: React.FC = () => {
   };
 
   const navLinks = [
-    { to: '/admin/dashboard', label: 'Business Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { to: '/admin/users', label: 'Staff & Roles', icon: <Users className="w-4 h-4" /> },
-    { to: '/admin/products', label: 'Catalog Matrix', icon: <Layers className="w-4 h-4" /> },
-    { to: '/admin/customers', label: 'Customer Directory', icon: <UserCheck className="w-4 h-4" /> },
-    { to: '/admin/orders', label: 'Orders & POS', icon: <Package className="w-4 h-4" /> },
-    { to: '/admin/inventory', label: 'Warehouse Stock', icon: <Boxes className="w-4 h-4" /> },
-    { to: '/admin/repairs', label: 'Diagnostic Lab', icon: <Wrench className="w-4 h-4" /> },
+    { to: '/admin/dashboard', label: 'Tổng quan', tooltip: 'Tổng quan kinh doanh & Điều hành', icon: <LayoutDashboard className="w-4 h-4 shrink-0" /> },
+    { to: '/admin/users', label: 'Nhân sự', tooltip: 'Tài khoản nhân sự & Phân quyền', icon: <Users className="w-4 h-4 shrink-0" /> },
+    { to: '/admin/products', label: 'Sản phẩm', tooltip: 'Danh mục sản phẩm & Biên lợi nhuận', icon: <Layers className="w-4 h-4 shrink-0" /> },
+    { to: '/admin/customers', label: 'Khách hàng', tooltip: 'Danh bạ khách hàng & Phân hạng', icon: <UserCheck className="w-4 h-4 shrink-0" /> },
+    { to: '/admin/orders', label: 'Đơn hàng & POS', tooltip: 'Quản lý đơn hàng & Quầy POS', icon: <Package className="w-4 h-4 shrink-0" /> },
+    { to: '/admin/inventory', label: 'Kho vận', tooltip: 'Tồn kho linh kiện & Quản lý kho', icon: <Boxes className="w-4 h-4 shrink-0" /> },
+    { to: '/admin/repairs', label: 'Bảo hành & Lab', tooltip: 'Phòng kỹ thuật & Phiếu bảo hành', icon: <Wrench className="w-4 h-4 shrink-0" /> },
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-m3-surface-container-low text-m3-on-surface font-sans selection:bg-m3-primary selection:text-white">
       {/* Top Admin Command Header (Material 3 Top App Bar) */}
       <header className="sticky top-0 z-40 bg-white border-b border-m3-outline-variant/60 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-4">
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16 gap-3">
             {/* Brand Logo */}
-            <Link to="/admin/dashboard" className="flex items-center gap-3 shrink-0">
-              <div className="w-9 h-9 rounded-m3-md bg-m3-primary flex items-center justify-center font-bold text-white shadow-xs">
+            <Link to="/admin/dashboard" className="flex items-center gap-2.5 shrink-0">
+              <div className="w-9 h-9 rounded-m3-md bg-m3-primary flex items-center justify-center font-bold text-white shadow-xs shrink-0">
                 <Shield className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <div className="font-bold text-lg tracking-tight leading-none text-m3-on-surface">
+              <div className="shrink-0">
+                <div className="font-bold text-lg tracking-tight leading-none text-m3-on-surface whitespace-nowrap">
                   COMPUTER<span className="text-m3-primary">TECH</span>
                 </div>
-                <div className="text-[10px] text-m3-on-surface-variant font-semibold tracking-wider uppercase font-mono mt-0.5">
-                  Executive Admin Portal
+                <div className="text-[10px] text-m3-on-surface-variant font-semibold tracking-wider uppercase font-mono mt-0.5 whitespace-nowrap">
+                  Cổng Quản Trị Cấp Cao
                 </div>
               </div>
             </Link>
 
             {/* Admin Desktop Navigation (M3 Pill Navigation) */}
-            <nav className="hidden xl:flex items-center gap-1 bg-m3-surface-container p-1 rounded-m3-full border border-m3-outline-variant/40">
+            <nav className="hidden xl:flex items-center gap-0.5 2xl:gap-1 bg-m3-surface-container p-1 rounded-m3-full border border-m3-outline-variant/40 shrink-0">
               {navLinks.map((link) => (
                 <NavLink
                   key={link.to}
                   to={link.to}
+                  title={link.tooltip}
                   className={({ isActive }) =>
-                    `px-3 py-1.5 text-xs font-semibold rounded-m3-full transition flex items-center gap-1.5 ${
+                    `px-2.5 2xl:px-3 py-1.5 text-xs font-semibold rounded-m3-full transition flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive
                         ? 'bg-white text-m3-primary shadow-xs font-bold'
                         : 'text-m3-on-surface-variant hover:text-m3-on-surface hover:bg-m3-surface-container-high'
@@ -93,28 +94,28 @@ export const AdminLayout: React.FC = () => {
                   }
                 >
                   {link.icon}
-                  <span>{link.label}</span>
+                  <span className="whitespace-nowrap">{link.label}</span>
                 </NavLink>
               ))}
             </nav>
 
             {/* Right Controls: Notifications & Admin Profile */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 2xl:gap-2.5 shrink-0">
               {/* Link to Storefront */}
               <Link
                 to="/store"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-m3-full border border-m3-outline-variant hover:bg-m3-surface-container text-m3-on-surface transition"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 2xl:px-3 py-1.5 text-xs font-semibold rounded-m3-full border border-m3-outline-variant hover:bg-m3-surface-container text-m3-on-surface transition whitespace-nowrap shrink-0"
               >
-                <Store className="w-3.5 h-3.5" />
-                <span>Xem Cửa hàng</span>
+                <Store className="w-3.5 h-3.5 shrink-0" />
+                <span className="whitespace-nowrap">Xem Cửa hàng</span>
               </Link>
 
               {/* Notification Center */}
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   onClick={() => setShowNotifs(!showNotifs)}
-                  className="p-2 text-m3-on-surface-variant hover:text-m3-on-surface hover:bg-m3-surface-container rounded-m3-full transition relative border border-m3-outline-variant/60"
-                  title="System Notifications"
+                  className="p-2 text-m3-on-surface-variant hover:text-m3-on-surface hover:bg-m3-surface-container rounded-m3-full transition relative border border-m3-outline-variant/60 shrink-0"
+                  title="Thông báo hệ thống"
                 >
                   <M3Badge content={unreadCount > 0 ? unreadCount : undefined}>
                     <Bell className="w-4 h-4" />
@@ -125,21 +126,21 @@ export const AdminLayout: React.FC = () => {
                   <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-m3-outline-variant/60 rounded-m3-lg shadow-xl z-50 text-m3-on-surface py-2">
                     <div className="px-4 py-2 border-b border-m3-surface-container flex items-center justify-between text-xs">
                       <span className="font-bold text-m3-on-surface uppercase tracking-wider font-mono">
-                        Admin Audit Alerts ({unreadCount})
+                        Thông báo hệ thống ({unreadCount})
                       </span>
                       {unreadCount > 0 && (
                         <button
                           onClick={markAllNotificationsAsRead}
                           className="text-m3-primary hover:underline text-[11px] font-medium"
                         >
-                          Mark all read
+                          Đánh dấu đã đọc tất cả
                         </button>
                       )}
                     </div>
 
                     <div className="max-h-72 overflow-y-auto divide-y divide-m3-surface-container text-xs">
                       {notifications.length === 0 ? (
-                        <div className="p-4 text-center text-m3-on-surface-variant">No alerts logged.</div>
+                        <div className="p-4 text-center text-m3-on-surface-variant">Không có thông báo mới.</div>
                       ) : (
                         notifications.slice(0, 6).map((notif) => (
                           <div
@@ -166,20 +167,22 @@ export const AdminLayout: React.FC = () => {
               </div>
 
               {/* Admin Profile */}
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-2 p-1.5 rounded-m3-full hover:bg-m3-surface-container border border-m3-outline-variant/60 transition"
+                  className="flex items-center gap-2 p-1.5 rounded-m3-full hover:bg-m3-surface-container border border-m3-outline-variant/60 transition shrink-0"
                 >
                   <img
                     src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
                     alt={user?.name}
-                    className="w-7 h-7 rounded-m3-full object-cover border border-m3-outline-variant"
+                    className="w-7 h-7 rounded-m3-full object-cover border border-m3-outline-variant shrink-0"
                   />
-                  <div className="hidden sm:block text-left pr-1">
-                    <div className="text-xs font-semibold text-m3-on-surface leading-none">{user?.name}</div>
-                    <div className="text-[10px] text-m3-primary uppercase font-bold mt-0.5 font-mono">
-                      Super Admin
+                  <div className="hidden sm:block text-left pr-1 min-w-0">
+                    <div className="text-xs font-semibold text-m3-on-surface leading-tight whitespace-nowrap truncate max-w-[140px]">
+                      {user?.name}
+                    </div>
+                    <div className="text-[10px] text-m3-primary uppercase font-bold mt-0.5 font-mono whitespace-nowrap">
+                      Quản trị viên cấp cao
                     </div>
                   </div>
                 </button>
@@ -190,14 +193,14 @@ export const AdminLayout: React.FC = () => {
                       <div className="font-bold text-m3-on-surface">{user?.name}</div>
                       <div className="text-[11px] text-m3-on-surface-variant font-mono">{user?.email}</div>
                       <div className="text-[10px] text-purple-700 font-bold uppercase mt-1">
-                        System Superuser (All Permissions)
+                        Toàn quyền hệ thống (Superuser)
                       </div>
                     </div>
 
                     <div className="p-2 border-b border-m3-surface-container">
                       <button
                         onClick={() => {
-                          if (window.confirm('Reset database to initial seed state?')) {
+                          if (window.confirm('Bạn có chắc muốn khôi phục cơ sở dữ liệu về trạng thái ban đầu?')) {
                             resetDatabase();
                             setShowProfileMenu(false);
                           }
@@ -205,7 +208,7 @@ export const AdminLayout: React.FC = () => {
                         className="w-full text-left px-3 py-2 text-amber-700 hover:bg-amber-50 rounded-m3-sm flex items-center gap-2 font-medium"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Reset Seed Database</span>
+                        <span>Khôi phục dữ liệu mẫu</span>
                       </button>
                     </div>
 
@@ -215,7 +218,7 @@ export const AdminLayout: React.FC = () => {
                         className="w-full text-left px-3 py-2 text-m3-error hover:bg-m3-error-container/40 rounded-m3-sm flex items-center gap-2 font-medium"
                       >
                         <LogOut className="w-3.5 h-3.5" />
-                        <span>Sign Out of Admin Portal</span>
+                        <span>Đăng xuất Quản trị</span>
                       </button>
                     </div>
                   </div>
@@ -226,7 +229,7 @@ export const AdminLayout: React.FC = () => {
         </div>
 
         {/* Secondary Subnav for Small / Medium screens */}
-        <div className="xl:hidden flex gap-1 px-4 py-2 border-t border-m3-outline-variant/60 overflow-x-auto text-xs bg-m3-surface-container-low">
+        <div className="xl:hidden flex gap-1 px-4 py-2 border-t border-m3-outline-variant/60 overflow-x-auto text-xs bg-m3-surface-container-low scrollbar-none">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}
@@ -252,8 +255,8 @@ export const AdminLayout: React.FC = () => {
       {/* Admin Footer */}
       <footer className="bg-m3-surface-container-highest border-t border-m3-outline-variant/60 py-4 px-6 text-xs text-m3-on-surface-variant font-mono">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div>ComputerTech Enterprise Admin Core • Google Material 3</div>
-          <div>Audit Logging: ACTIVE (BR.01-BR.10 Enforced)</div>
+          <div>ComputerTech Quản trị Cấp cao • Thiết kế Google Material 3</div>
+          <div>Kiểm toán hệ thống: ĐANG BẬT (Thực thi BR.01 - BR.10)</div>
         </div>
       </footer>
     </div>

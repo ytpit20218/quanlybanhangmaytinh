@@ -35,13 +35,13 @@ export const AdminCustomersView: React.FC = () => {
         <div>
           <div className="flex items-center space-x-2 text-blue-600 font-bold uppercase text-[11px] mb-1">
             <UserCheck className="w-4 h-4" />
-            <span>EXECUTIVE CRM REGISTRY</span>
+            <span>HỒ SƠ KHÁCH HÀNG CRM</span>
           </div>
           <h1 className="font-display font-bold text-2xl text-slate-900">
-            Registered Customers & Loyalty Tiers
+            Danh Bạ Khách Hàng & Phân Hạng Thành Viên
           </h1>
           <p className="text-slate-500 text-xs mt-1">
-            VIP privileges (5% discount strategy), enterprise commercial accounts, and service addresses
+            Đặc quyền VIP (chiết khấu 5%), khách hàng doanh nghiệp và địa chỉ giao hàng
           </p>
         </div>
       </div>
@@ -51,7 +51,7 @@ export const AdminCustomersView: React.FC = () => {
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
-            placeholder="Search customer, phone, email..."
+            placeholder="Tìm theo tên khách, SĐT, email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-64 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-800 placeholder-slate-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -62,14 +62,14 @@ export const AdminCustomersView: React.FC = () => {
             onChange={(e) => setTierFilter(e.target.value as any)}
             className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 text-xs uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
           >
-            <option value="all">ALL MEMBERSHIP TIERS</option>
-            <option value="vip">VIP PRIVILEGE (5% DISCOUNT)</option>
-            <option value="standard">STANDARD ACCOUNTS</option>
+            <option value="all">TẤT CẢ HẠNG THÀNH VIÊN</option>
+            <option value="vip">THÀNH VIÊN VIP (GIẢM 5%)</option>
+            <option value="standard">TÀI KHOẢN TIÊU CHUẨN</option>
           </select>
         </div>
 
         <div className="text-slate-500 text-xs">
-          Total Client Profiles: <strong className="text-slate-900 font-mono">{filtered.length}</strong>
+          Tổng số khách hàng: <strong className="text-slate-900 font-mono">{filtered.length}</strong>
         </div>
       </div>
 
@@ -80,7 +80,7 @@ export const AdminCustomersView: React.FC = () => {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-semibold text-sm text-slate-900">{c.name}</h3>
-                <div className="text-[11px] text-slate-400 font-mono mt-0.5">Account ID: {c.id}</div>
+                <div className="text-[11px] text-slate-400 font-mono mt-0.5">Mã KH: {c.id}</div>
               </div>
               <span
                 className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase ${
@@ -89,7 +89,7 @@ export const AdminCustomersView: React.FC = () => {
                     : 'bg-slate-100 text-slate-600 border border-slate-200'
                 }`}
               >
-                {c.tier} Member
+                {c.tier === 'vip' ? 'Thành viên VIP' : 'Khách Chuẩn'}
               </span>
             </div>
 

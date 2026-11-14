@@ -91,7 +91,7 @@ export const CustomerLoginPage: React.FC = () => {
     }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setRegSuccess(false);
@@ -154,9 +154,21 @@ export const CustomerLoginPage: React.FC = () => {
     });
 
     refreshData();
+
+    // Auto-login immediately upon registration
+    try {
+      const loginRes = await login(emailClean, passwordClean);
+      if (loginRes.success) {
+        navigate('/store', { replace: true });
+        return;
+      }
+    } catch {
+      // Fallback
+    }
+
     setRegSuccess(true);
     setEmail(emailClean);
-    setPassword('');
+    setPassword(passwordClean);
     setRegPassword('');
     setActiveTab('signin');
   };

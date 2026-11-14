@@ -12,21 +12,31 @@ function record(suite, name, passed, detail = '') {
   console.log(`  ${status}: [${suite}] ${name} ${detail ? '(' + detail + ')' : ''}`);
 }
 
-async function loginInContext(page, email) {
+// Known seed credentials (see frontend/src/services/mockDatabase.ts INITIAL_USERS)
+const SEED_PASSWORDS = {
+  'admin@computertech.vn': 'admin123',
+  'sale@computertech.vn': 'sale123',
+  'huong.le@computertech.vn': 'sale123',
+  'warehouse@computertech.vn': 'warehouse123',
+  'dat.vo@computertech.vn': 'warehouse123',
+  'tech@computertech.vn': 'tech123',
+  'bao.gamer@gmail.com': 'password123',
+  'thutrang.arch@gmail.com': 'password123',
+  'hai.vu@techvision.vn': 'password123',
+};
+
+async function loginInContext(page, email, password) {
   const isStaff = email.endsWith('@computertech.vn');
   const targetUrl = isStaff ? `${BASE_URL}/company/login` : `${BASE_URL}/login`;
+  const pass = password || SEED_PASSWORDS[email];
   await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
   await sleep(400);
 
-  const buttons = await page.$$('button');
-  for (const b of buttons) {
-    const text = await page.evaluate(el => el.innerText, b);
-    if (text.includes(email)) {
-      await b.click();
-      break;
-    }
-  }
-  await sleep(300);
+  const emailInput = await page.$('input[type="email"]') || await page.$('input[type="text"]');
+  const passInput = await page.$('input[type="password"]');
+  if (emailInput) await emailInput.type(email);
+  if (passInput && pass) await passInput.type(pass);
+  await sleep(150);
 
   const submitBtn = await page.$('button[type="submit"]');
   if (submitBtn) await submitBtn.click();
@@ -115,7 +125,7 @@ async function runE2ETests() {
 
       // 6. Verify Cart Drawer is open with live items & pricing
       const drawerText = await page.evaluate(() => document.body.innerText);
-      const isDrawerOpen = drawerText.includes('Hardware Requisition Cart') || drawerText.includes('item(s) selected');
+      const isDrawerOpen = drawerText.includes('Hardware Requisition Cart') || drawerText.includes('item(s) selected') || drawerText.includes('Giỏ hàng') || drawerText.includes('sản phẩm đã chọn');
       record('Test A', 'Cart drawer opens with live items & pricing', isDrawerOpen);
 
       // 7. Perform Guest Checkout
@@ -128,7 +138,7 @@ async function runE2ETests() {
 
         for (const b of await page.$$('button')) {
           const text = await page.evaluate(el => el.innerText, b);
-          if (text.includes('Submit Hardware Requisition') || text.includes('Submit')) {
+          if (text.includes('Submit Hardware Requisition') || text.includes('Submit') || text.includes('Đặt hàng ngay') || text.includes('Xác nhận đặt hàng')) {
             await b.click();
             break;
           }
@@ -136,7 +146,7 @@ async function runE2ETests() {
         await sleep(1000);
 
         const afterText = await page.evaluate(() => document.body.innerText);
-        const success = afterText.includes('Order Placed Successfully') || afterText.includes('ORD-');
+        const success = afterText.includes('Order Placed Successfully') || afterText.includes('ORD-') || afterText.includes('Đặt hàng thành công');
         record('Test A', 'Guest order submitted successfully (generates ORD-*)', success);
 
         // Click track order button
@@ -176,21 +186,21 @@ async function runE2ETests() {
       await page.goto(`${BASE_URL}/sales/customers`, { waitUntil: 'domcontentloaded' });
       await sleep(400);
       const regContent = await page.evaluate(() => document.body.innerText);
-      record('Test B', 'Sales customer registration portal accessible', regContent.includes('Client Accounts') || regContent.includes('Register New Client') || regContent.includes('SALES COUNTER CUSTOMER HUB'));
+      record('Test B', 'Sales customer registration portal accessible', regContent.includes('Client Accounts') || regContent.includes('Register New Client') || regContent.includes('SALES COUNTER CUSTOMER HUB') || regContent.includes('TRUNG TÂM KHÁCH HÀNG') || regContent.includes('Đăng ký'));
 
       // Open registration modal
       for (const b of await page.$$('button')) {
         const text = await page.evaluate(el => el.innerText, b);
-        if (text.includes('Register New Client')) {
+        if (text.includes('Register New Client') || text.includes('Đăng ký khách mới')) {
           await b.click();
           break;
         }
       }
       await sleep(400);
 
-      const custName = await page.$('input[placeholder*="Viet Tech Engineering"]');
-      const custPhone = await page.$('input[placeholder*="0903-888-777"]');
-      const custEmail = await page.$('input[placeholder*="contact@viettech.vn"]');
+      const custName = await page.$('input[placeholder*="Viet Tech Engineering"], input[placeholder*="Công ty"]');
+      const custPhone = await page.$('input[placeholder*="0903-888-777"], input[placeholder*="090"]');
+      const custEmail = await page.$('input[placeholder*="contact@viettech.vn"], input[placeholder*="@"]');
       if (custName && custPhone && custEmail) {
         await custName.type('Trần Thị Mai');
         await custPhone.type('0901234567');
@@ -199,7 +209,7 @@ async function runE2ETests() {
         
         for (const b of await page.$$('button')) {
           const text = await page.evaluate(el => el.innerText, b);
-          if (text.includes('Save & Register')) {
+          if (text.includes('Save & Register') || text.includes('Lưu & Đăng ký') || text.includes('Đăng ký tài khoản')) {
             await b.click();
             break;
           }
@@ -268,12 +278,12 @@ async function runE2ETests() {
       // Verify Stock Matrix
       const whContent = await page.evaluate(() => document.body.innerText);
       const whUpper = whContent.toUpperCase();
-      record('Test C', 'Stock matrix shows On-Hand, Reserved, and Available quantities', whUpper.includes('ON-HAND') && whUpper.includes('RESERVED') && whUpper.includes('AVAILABLE'));
+      record('Test C', 'Stock matrix shows On-Hand, Reserved, and Available quantities', (whUpper.includes('ON-HAND') || whUpper.includes('TỒN THỰC TẾ') || whUpper.includes('TỒN KHO')) && (whUpper.includes('RESERVED') || whUpper.includes('GIỮ CHỖ')) && (whUpper.includes('AVAILABLE') || whUpper.includes('KHẢ DỤNG')));
 
       // Test Stock Adjustment requiring reason (BR.04)
       for (const b of await page.$$('button')) {
         const text = await page.evaluate(el => el.innerText, b);
-        if (text.includes('Adjust')) {
+        if (text.includes('Adjust') || text.includes('Điều chỉnh')) {
           await b.click();
           break;
         }
@@ -282,19 +292,19 @@ async function runE2ETests() {
 
       for (const b of await page.$$('button')) {
         const text = await page.evaluate(el => el.innerText, b);
-        if (text.includes('Commit Stock')) {
+        if (text.includes('Commit Stock') || text.includes('Cập nhật') || text.includes('Xác nhận')) {
           await b.click();
           break;
         }
       }
       await sleep(300);
       const errText = await page.evaluate(() => document.body.innerText);
-      record('Test C', 'Stock operation without reason rejected (BR.04 enforced)', errText.includes('BR.04') || errText.includes('reason is required'));
+      record('Test C', 'Stock operation without reason rejected (BR.04 enforced)', errText.includes('BR.04') || errText.includes('reason is required') || errText.includes('lý do'));
 
       // Close modal
       for (const b of await page.$$('button')) {
         const text = await page.evaluate(el => el.innerText, b);
-        if (text.includes('Cancel')) {
+        if (text.includes('Cancel') || text.includes('Hủy')) {
           await b.click();
           break;
         }
@@ -305,7 +315,7 @@ async function runE2ETests() {
       await page.goto(`${BASE_URL}/warehouse/picking`, { waitUntil: 'domcontentloaded' });
       await sleep(400);
       const pickText = await page.evaluate(() => document.body.innerText);
-      record('Test C', 'Warehouse picking queue renders orders ready for dispatch', pickText.includes('Picking') || pickText.includes('Dispatch') || pickText.includes('Queue'));
+      record('Test C', 'Warehouse picking queue renders orders ready for dispatch', pickText.includes('Picking') || pickText.includes('Dispatch') || pickText.includes('Queue') || pickText.includes('Soạn hàng') || pickText.includes('Xuất kho'));
 
       // Warehouse cannot access POS
       await page.goto(`${BASE_URL}/sales/pos`, { waitUntil: 'domcontentloaded' });
@@ -331,7 +341,7 @@ async function runE2ETests() {
 
       // Inspect bench tickets
       const techText = await page.evaluate(() => document.body.innerText);
-      record('Test D', 'Diagnostic bench loaded with assigned tickets & serial numbers', techText.includes('Diagnostic') || techText.includes('Bench') || techText.includes('SN-'));
+      record('Test D', 'Diagnostic bench loaded with assigned tickets & serial numbers', techText.includes('Diagnostic') || techText.includes('Bench') || techText.includes('SN-') || techText.includes('Kỹ thuật') || techText.includes('Phòng Kỹ Thuật'));
 
       // Verify diagnostic notes update
       const noteArea = await page.$('textarea[placeholder*="diagnostic"], textarea[placeholder*="ghi chú"]');
@@ -371,7 +381,7 @@ async function runE2ETests() {
       // Verify completed revenue KPI strictly adheres to BR.10
       const dashText = await page.evaluate(() => document.body.innerText);
       const dashUpper = dashText.toUpperCase();
-      record('Test E', 'Dashboard enforces BR.10 (Completed Revenue aggregated only from Completed orders)', dashUpper.includes('BR.10') && (dashUpper.includes('COMPLETED REVENUE') || dashText.includes('Completed Revenue')));
+      record('Test E', 'Dashboard enforces BR.10 (Completed Revenue aggregated only from Completed orders)', dashUpper.includes('BR.10') && (dashUpper.includes('COMPLETED REVENUE') || dashText.includes('Completed Revenue') || dashUpper.includes('DOANH THU THỰC TẾ')));
 
       // Admin can open all 6 management modules
       const modules = [
@@ -437,13 +447,10 @@ async function runE2ETests() {
       });
       await page.reload({ waitUntil: 'domcontentloaded' });
       await sleep(300);
-      for (const b of await page.$$('button')) {
-        const text = await page.evaluate(el => el.innerText, b);
-        if (text.includes('sale@computertech.vn')) {
-          await b.click();
-          break;
-        }
-      }
+      const emailInputF = await page.$('input[type="email"]') || await page.$('input[type="text"]');
+      const passInputF = await page.$('input[type="password"]');
+      if (emailInputF) await emailInputF.type('sale@computertech.vn');
+      if (passInputF) await passInputF.type('sale123');
       await sleep(200);
       const submitBtn = await page.$('button[type="submit"]');
       if (submitBtn) await submitBtn.click();

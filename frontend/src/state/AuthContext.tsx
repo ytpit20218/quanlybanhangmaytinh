@@ -22,13 +22,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore session on initial load or refresh
+  // Restore session on initial load or refresh, and sync across tabs
   useEffect(() => {
-    const existing = AuthService.getCurrentSession();
-    if (existing) {
+    const syncSession = () => {
+      const existing = AuthService.getCurrentSession();
       setUser(existing);
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    syncSession();
+
+    window.addEventListener('storage', syncSession);
+    return () => {
+      window.removeEventListener('storage', syncSession);
+    };
   }, []);
 
   const login = async (

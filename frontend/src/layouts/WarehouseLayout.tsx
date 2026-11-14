@@ -42,9 +42,9 @@ export const WarehouseLayout: React.FC = () => {
   };
 
   const navLinks = [
-    { to: '/warehouse/inventory', label: 'Stock Matrix', icon: <FileSpreadsheet className="w-4 h-4" /> },
-    { to: '/warehouse/picking', label: 'Order Picking & Dispatch', icon: <PackageCheck className="w-4 h-4" /> },
-    { to: '/warehouse/ledger', label: 'Audit Transaction Ledger', icon: <History className="w-4 h-4" /> },
+    { to: '/warehouse/inventory', label: 'Tồn kho linh kiện', icon: <FileSpreadsheet className="w-4 h-4" /> },
+    { to: '/warehouse/picking', label: 'Soạn hàng & Xuất kho', icon: <PackageCheck className="w-4 h-4" /> },
+    { to: '/warehouse/ledger', label: 'Nhật ký giao dịch kho', icon: <History className="w-4 h-4" /> },
   ];
 
   return (
@@ -63,7 +63,7 @@ export const WarehouseLayout: React.FC = () => {
                   COMPUTER<span className="text-amber-600">TECH</span>
                 </div>
                 <div className="text-[10px] text-m3-on-surface-variant font-mono tracking-wider uppercase mt-0.5">
-                  Central Warehouse Operations
+                  Vận Hành Kho Tổng
                 </div>
               </div>
             </Link>
@@ -89,37 +89,37 @@ export const WarehouseLayout: React.FC = () => {
             </nav>
 
             {/* Right Profile & Alert Controls */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 shrink-0">
               <Link
                 to="/store"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-m3-full border border-m3-outline-variant hover:bg-m3-surface-container text-m3-on-surface transition"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-m3-full border border-m3-outline-variant hover:bg-m3-surface-container text-m3-on-surface transition whitespace-nowrap shrink-0"
               >
-                <Store className="w-3.5 h-3.5" />
-                <span>Xem Cửa hàng</span>
+                <Store className="w-3.5 h-3.5 shrink-0" />
+                <span className="whitespace-nowrap">Xem Cửa hàng</span>
               </Link>
 
               {/* Low stock badge */}
               {lowStockCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-m3-full">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-m3-full whitespace-nowrap shrink-0">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   <span>{lowStockCount} SKU cần bổ sung</span>
                 </span>
               )}
 
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   onClick={() => setShowProfile(!showProfile)}
-                  className="flex items-center gap-2 p-1.5 rounded-m3-full hover:bg-m3-surface-container border border-m3-outline-variant/60 transition"
+                  className="flex items-center gap-2 p-1.5 rounded-m3-full hover:bg-m3-surface-container border border-m3-outline-variant/60 transition shrink-0"
                 >
                   <img
                     src={user?.avatar || 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150'}
                     alt={user?.name}
-                    className="w-7 h-7 rounded-m3-full object-cover border border-slate-300"
+                    className="w-7 h-7 rounded-m3-full object-cover border border-slate-300 shrink-0"
                   />
-                  <div className="hidden sm:block text-left pr-1">
-                    <div className="text-xs font-semibold text-m3-on-surface leading-none">{user?.name}</div>
-                    <div className="text-[10px] text-amber-600 font-mono font-bold mt-0.5 uppercase">
-                      Warehouse Lead
+                  <div className="hidden sm:block text-left pr-1 min-w-0">
+                    <div className="text-xs font-semibold text-m3-on-surface leading-tight whitespace-nowrap truncate max-w-[140px]">{user?.name}</div>
+                    <div className="text-[10px] text-amber-600 font-mono font-bold mt-0.5 uppercase whitespace-nowrap">
+                      Quản lý kho
                     </div>
                   </div>
                 </button>
@@ -130,7 +130,7 @@ export const WarehouseLayout: React.FC = () => {
                       <div className="font-semibold text-m3-on-surface">{user?.name}</div>
                       <div className="text-[11px] text-m3-on-surface-variant font-mono">{user?.email}</div>
                       <span className="inline-block mt-1 px-1.5 py-0.5 bg-amber-50 text-amber-800 text-[10px] font-bold rounded-m3-xs border border-amber-200">
-                        Warehouse Operations Lead
+                        Trưởng ca Vận hành kho
                       </span>
                     </div>
 
@@ -140,7 +140,7 @@ export const WarehouseLayout: React.FC = () => {
                         className="w-full px-3 py-2 text-left text-m3-error hover:bg-m3-error-container/40 rounded-m3-sm flex items-center gap-2 transition font-medium"
                       >
                         <LogOut className="w-3.5 h-3.5" />
-                        <span>Sign Out</span>
+                        <span>Đăng xuất</span>
                       </button>
                     </div>
                   </div>

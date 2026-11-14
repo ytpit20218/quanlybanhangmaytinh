@@ -382,6 +382,54 @@ class MockDatabase {
     }
   }
 
+  markOrderPaid(orderId: string): boolean {
+    const order = this.state.orders.find((o) => o.id === orderId || o.orderNumber === orderId);
+    if (!order) return false;
+    order.paymentStatus = 'paid';
+    if (order.status === 'pending') {
+      order.status = 'confirmed';
+    }
+    order.paidAt = new Date().toISOString();
+    order.updatedAt = new Date().toISOString();
+    this.save();
+    return true;
+  }
+
+  addProduct(
+    product: Product,
+    initialStock = 0,
+    location = 'KHO-TONG-A1',
+    actorName = 'Quản lý kho / Admin'
+  ): void {
+    this.state.products.unshift(product);
+    this.state.inventory[product.id] = {
+      productId: product.id,
+      quantityOnHand: initialStock,
+      quantityReserved: 0,
+      location,
+      lastUpdated: new Date().toISOString(),
+    };
+    if (initialStock > 0) {
+      this.state.inventory_transactions.unshift({
+        id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        productId: product.id,
+        type: 'receipt',
+        quantity: initialStock,
+        previousOnHand: 0,
+        newOnHand: initialStock,
+        previousReserved: 0,
+        newReserved: 0,
+        reason: 'Khởi tạo nhập hàng mới vào kho',
+        actorId: 'warehouse_admin',
+        actorName,
+        referenceType: 'initial_stock',
+        referenceId: `PO-${Date.now().toString().slice(-6)}`,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    this.save();
+  }
+
   updateInventoryRecord(inventory: Inventory): void {
     this.state.inventory[inventory.productId] = inventory;
     this.save();

@@ -4,7 +4,7 @@
 
 import { BusinessRulesValidator } from '../domain/validation/businessRules';
 import { CreateOrderParams, OrderFactory } from '../factories/orderFactory';
-import { Customer, Order, OrderItem, OrderStatus, Product, User } from '../types';
+import { Customer, Order, OrderItem, OrderStatus, PaymentMethod, Product, User } from '../types';
 import { eventBus } from './eventBus';
 import { InventoryService } from './inventoryService';
 import { mockDb } from './mockDatabase';
@@ -12,7 +12,7 @@ import { mockDb } from './mockDatabase';
 export interface PlaceOrderInput {
   customer: Customer;
   items: Array<{ product: Product; quantity: number }>;
-  paymentMethod?: 'cash' | 'bank_transfer' | 'card';
+  paymentMethod?: PaymentMethod;
   notes?: string;
   actor: User;
   autoConfirm?: boolean; // POS counter can auto-confirm and complete

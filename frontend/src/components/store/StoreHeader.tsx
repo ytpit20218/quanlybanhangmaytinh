@@ -274,7 +274,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
                           className="px-4 py-2 hover:bg-slate-50 flex items-center gap-2 text-blue-600 font-semibold"
                         >
                           <Cpu className="w-4 h-4" />
-                          <span>Vào Workspace ({user.role}) ➔</span>
+                          <span>Khu vực làm việc ({user.role}) ➔</span>
                         </Link>
                       )}
                       <Link

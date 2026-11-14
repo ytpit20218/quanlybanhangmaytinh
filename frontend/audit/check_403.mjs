@@ -1,0 +1,13 @@
+import puppeteer from 'puppeteer-core';
+const browser = await puppeteer.launch({ executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', headless: 'new', args: ['--no-sandbox'] });
+const page = await browser.newPage();
+await page.setViewport({ width: 1366, height: 768 });
+await page.goto('http://localhost:5173/login');
+await page.evaluate(() => localStorage.setItem('computertech_auth_session_v1', JSON.stringify({id:'usr_staff_sale',name:'Sale',email:'sale@computertech.vn',role:'sale',active:true})));
+await page.goto('http://localhost:5173/admin/users', { waitUntil: 'networkidle2' });
+await new Promise(r=>setTimeout(r,600));
+const text = await page.evaluate(() => document.body.innerText.slice(0, 400));
+console.log('URL:', page.url());
+console.log('TEXT:', text);
+await page.screenshot({ path: 'audit/out/role-mismatch-check.png' });
+await browser.close();

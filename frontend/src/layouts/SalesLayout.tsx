@@ -34,10 +34,10 @@ export const SalesLayout: React.FC = () => {
   };
 
   const navLinks = [
-    { to: '/sales/pos', label: 'POS Terminal', icon: <ShoppingBag className="w-4 h-4" /> },
-    { to: '/sales/orders', label: 'Order Processing', icon: <Package className="w-4 h-4" /> },
-    { to: '/sales/intake', label: 'Device Intake / Return', icon: <Wrench className="w-4 h-4" /> },
-    { to: '/sales/customers', label: 'Customer Accounts', icon: <UserPlus className="w-4 h-4" /> },
+    { to: '/sales/pos', label: 'Quầy POS', icon: <ShoppingBag className="w-4 h-4" /> },
+    { to: '/sales/orders', label: 'Xử lý đơn hàng', icon: <Package className="w-4 h-4" /> },
+    { to: '/sales/intake', label: 'Tiếp nhận & Trả máy', icon: <Wrench className="w-4 h-4" /> },
+    { to: '/sales/customers', label: 'Khách hàng', icon: <UserPlus className="w-4 h-4" /> },
   ];
 
   return (
@@ -56,7 +56,7 @@ export const SalesLayout: React.FC = () => {
                   COMPUTER<span className="text-blue-600">TECH</span>
                 </div>
                 <div className="text-[10px] text-m3-on-surface-variant font-mono tracking-wider uppercase mt-0.5">
-                  Retail & Sales Operations
+                  Quản lý Bán lẻ & Quầy POS
                 </div>
               </div>
             </Link>
@@ -82,29 +82,29 @@ export const SalesLayout: React.FC = () => {
             </nav>
 
             {/* Right Profile Controls */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 shrink-0">
               <Link
                 to="/store"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-m3-full border border-m3-outline-variant hover:bg-m3-surface-container text-m3-on-surface transition"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-m3-full border border-m3-outline-variant hover:bg-m3-surface-container text-m3-on-surface transition whitespace-nowrap shrink-0"
               >
-                <Store className="w-3.5 h-3.5" />
-                <span>Xem Cửa hàng</span>
+                <Store className="w-3.5 h-3.5 shrink-0" />
+                <span className="whitespace-nowrap">Xem Cửa hàng</span>
               </Link>
 
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   onClick={() => setShowProfile(!showProfile)}
-                  className="flex items-center gap-2 p-1.5 rounded-m3-full hover:bg-m3-surface-container border border-m3-outline-variant/60 transition"
+                  className="flex items-center gap-2 p-1.5 rounded-m3-full hover:bg-m3-surface-container border border-m3-outline-variant/60 transition shrink-0"
                 >
                   <img
                     src={user?.avatar || 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150'}
                     alt={user?.name}
-                    className="w-7 h-7 rounded-m3-full object-cover border border-slate-300"
+                    className="w-7 h-7 rounded-m3-full object-cover border border-slate-300 shrink-0"
                   />
-                  <div className="hidden sm:block text-left pr-1">
-                    <div className="text-xs font-semibold text-m3-on-surface leading-none">{user?.name}</div>
-                    <div className="text-[10px] text-blue-600 font-mono font-bold mt-0.5 uppercase">
-                      Sales Desk
+                  <div className="hidden sm:block text-left pr-1 min-w-0">
+                    <div className="text-xs font-semibold text-m3-on-surface leading-tight whitespace-nowrap truncate max-w-[140px]">{user?.name}</div>
+                    <div className="text-[10px] text-blue-600 font-mono font-bold mt-0.5 uppercase whitespace-nowrap">
+                      Bộ phận Bán hàng
                     </div>
                   </div>
                 </button>
@@ -115,7 +115,7 @@ export const SalesLayout: React.FC = () => {
                       <div className="font-semibold text-m3-on-surface">{user?.name}</div>
                       <div className="text-[11px] text-m3-on-surface-variant font-mono">{user?.email}</div>
                       <span className="inline-block mt-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-m3-xs border border-blue-200">
-                        Sales Representative
+                        Chuyên viên Bán hàng
                       </span>
                     </div>
 
@@ -125,7 +125,7 @@ export const SalesLayout: React.FC = () => {
                         className="w-full px-3 py-2 text-left text-m3-error hover:bg-m3-error-container/40 rounded-m3-sm flex items-center gap-2 transition font-medium"
                       >
                         <LogOut className="w-3.5 h-3.5" />
-                        <span>Sign Out</span>
+                        <span>Đăng xuất</span>
                       </button>
                     </div>
                   </div>

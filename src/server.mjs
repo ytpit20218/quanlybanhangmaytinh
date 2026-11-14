@@ -239,7 +239,32 @@ app.post('/api/customers', async (req, res) => {
 // 8. Orders
 app.get('/api/orders', async (req, res) => {
   try {
-    const [orders] = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
+    const { status, payment_status, payment_method, search, limit = '200', offset = '0' } = req.query;
+    
+    let query = 'SELECT * FROM orders WHERE 1=1';
+    const params = [];
+
+    if (status) {
+      query += ' AND status = ?';
+      params.push(status);
+    }
+    if (payment_status) {
+      query += ' AND payment_status = ?';
+      params.push(payment_status);
+    }
+    if (payment_method) {
+      query += ' AND payment_method = ?';
+      params.push(payment_method);
+    }
+    if (search) {
+      query += ' AND (order_number LIKE ? OR payment_code LIKE ? OR id LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    params.push(Number(limit) || 200, Number(offset) || 0);
+
+    const [orders] = await pool.query(query, params);
     const [items] = await pool.query('SELECT * FROM order_items');
     
     // Group items by order_id
@@ -254,7 +279,7 @@ app.get('/api/orders', async (req, res) => {
       items: itemsByOrder[o.id] || [],
     }));
 
-    res.json({ success: true, data: enrichedOrders });
+    res.json({ success: true, total: enrichedOrders.length, data: enrichedOrders });
   } catch (err) {
     sendServerError(res, err);
   }
@@ -321,14 +346,55 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
+app.get('/', (req, res) => {
+  res.type('html').send(`<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ComputerTech API Server</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 32px; max-width: 540px; width: 100%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); text-align: center; }
+    .badge { display: inline-flex; align-items: center; gap: 8px; background: #064e3b; color: #34d399; padding: 6px 14px; border-radius: 9999px; font-weight: 600; font-size: 13px; margin-bottom: 16px; }
+    .dot { width: 8px; height: 8px; background: #34d399; border-radius: 50%; box-shadow: 0 0 8px #34d399; }
+    h1 { margin: 0 0 12px 0; font-size: 22px; color: #fff; }
+    p { margin: 0 0 20px 0; color: #94a3b8; line-height: 1.5; font-size: 14px; }
+    .endpoint { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 14px; font-family: monospace; font-size: 13px; color: #38bdf8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge"><span class="dot"></span> HỆ THỐNG ĐANG HOẠT ĐỘNG (ONLINE)</div>
+    <h1>ComputerTech Backend REST API</h1>
+    <p>Hệ thống máy chủ dịch vụ bán hàng và quản lý linh kiện máy tính ComputerTech.</p>
+    <div class="endpoint"><a href="/api/health" style="color: inherit; text-decoration: none;">GET /api/health</a></div>
+  </div>
+</body>
+</html>`);
+});
+
 app.use('/api', (req, res) => {
   res.status(404).json({ success: false, message: 'API endpoint not found' });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`=======================================================`);
   console.log(`COMPUTERTECH BACKEND REST API SERVER IS RUNNING`);
   console.log(`Port: http://localhost:${PORT}`);
   console.log(`Health Check: http://localhost:${PORT}/api/health`);
   console.log(`=======================================================`);
 });
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ LỖI: Cổng ${PORT} đang bị chiếm dụng bởi một tiến trình khác (EADDRINUSE).`);
+    console.error(`👉 Bạn có thể chạy lại file start.bat để tự động dọn dẹp và giải phóng cổng.`);
+    process.exit(1);
+  } else {
+    console.error('Lỗi khởi động Server:', err);
+  }
+});
+
+export { app, server };
+

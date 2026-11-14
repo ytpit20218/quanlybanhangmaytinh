@@ -43,20 +43,20 @@ export const Header: React.FC = () => {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const workspaces: Array<{ id: WorkspaceMode; label: string; icon: React.ReactNode; badge?: string }> = [
-    { id: 'storefront', label: 'Storefront', icon: <Store className="w-4 h-4" /> },
-    { id: 'pos', label: 'POS Counter', icon: <Terminal className="w-4 h-4" /> },
-    { id: 'inventory', label: 'Inventory Matrix', icon: <Layers className="w-4 h-4" /> },
-    { id: 'repairs', label: 'Repair Bench', icon: <Wrench className="w-4 h-4" /> },
-    { id: 'dashboard', label: 'Operations & Audit', icon: <Cpu className="w-4 h-4" /> },
-    { id: 'tracking', label: 'Self-Service Tracking', icon: <Search className="w-4 h-4" /> },
+    { id: 'storefront', label: 'Cửa hàng', icon: <Store className="w-4 h-4" /> },
+    { id: 'pos', label: 'Quầy POS', icon: <Terminal className="w-4 h-4" /> },
+    { id: 'inventory', label: 'Tồn kho linh kiện', icon: <Layers className="w-4 h-4" /> },
+    { id: 'repairs', label: 'Sửa chữa & Lab', icon: <Wrench className="w-4 h-4" /> },
+    { id: 'dashboard', label: 'Tổng quan & Kiểm toán', icon: <Cpu className="w-4 h-4" /> },
+    { id: 'tracking', label: 'Tra cứu trực tuyến', icon: <Search className="w-4 h-4" /> },
   ];
 
   const roleLabels: Record<UserRole, { title: string; color: string }> = {
-    customer: { title: 'Customer', color: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
-    admin: { title: 'Administrator', color: 'bg-purple-100 text-purple-900 border-purple-300' },
-    sale: { title: 'Sales Executive', color: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
-    warehouse: { title: 'Warehouse Lead', color: 'bg-amber-100 text-amber-900 border-amber-300' },
-    technician: { title: 'Bench Specialist', color: 'bg-cyan-100 text-cyan-900 border-cyan-300' },
+    customer: { title: 'Khách hàng', color: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+    admin: { title: 'Quản trị viên', color: 'bg-purple-100 text-purple-900 border-purple-300' },
+    sale: { title: 'Chuyên viên Bán hàng', color: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+    warehouse: { title: 'Quản lý kho', color: 'bg-amber-100 text-amber-900 border-amber-300' },
+    technician: { title: 'Kỹ thuật viên', color: 'bg-cyan-100 text-cyan-900 border-cyan-300' },
   };
 
   return (
@@ -138,21 +138,21 @@ export const Header: React.FC = () => {
                 <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-slate-900 border border-slate-700 rounded-md shadow-2xl z-50 text-slate-200 py-2">
                   <div className="px-3 py-2 border-b border-slate-800 flex items-center justify-between">
                     <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      System Audit Notifications ({unreadCount} unread)
+                      Thông báo hệ thống ({unreadCount} chưa đọc)
                     </span>
                     {unreadCount > 0 && (
                       <button
                         onClick={markAllNotificationsAsRead}
                         className="text-[11px] text-orange-400 hover:text-orange-300 hover:underline"
                       >
-                        Mark all read
+                        Đánh dấu đã đọc tất cả
                       </button>
                     )}
                   </div>
 
                   <div className="max-h-80 overflow-y-auto divide-y divide-slate-800 text-xs">
                     {notifications.length === 0 ? (
-                      <div className="p-4 text-center text-slate-500">No notifications yet.</div>
+                      <div className="p-4 text-center text-slate-500">Chưa có thông báo nào.</div>
                     ) : (
                       notifications.slice(0, 8).map((notif) => (
                         <div
@@ -223,7 +223,7 @@ export const Header: React.FC = () => {
               {showRoleMenu && (
                 <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-md shadow-2xl z-50 text-slate-200 py-1">
                   <div className="px-3 py-2 border-b border-slate-800 text-[11px] font-mono uppercase text-slate-400">
-                    Switch Active Operational Role
+                    Chuyển đổi vai trò người dùng
                   </div>
                   {users.map((u) => (
                     <button
@@ -247,7 +247,7 @@ export const Header: React.FC = () => {
                   <div className="border-t border-slate-800 mt-1 pt-1 px-3 py-2">
                     <button
                       onClick={() => {
-                        if (confirm('Reset mock database to initial seed data? All custom orders and inventory changes will revert.')) {
+                        if (confirm('Khôi phục cơ sở dữ liệu mẫu về trạng thái ban đầu? Toàn bộ đơn hàng và biến động kho tùy chỉnh sẽ được đặt lại.')) {
                           resetDatabase();
                           setShowRoleMenu(false);
                         }
@@ -255,7 +255,7 @@ export const Header: React.FC = () => {
                       className="text-xs text-rose-400 hover:text-rose-300 flex items-center space-x-1.5"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Reset Mock Data to Initial</span>
+                      <span>Khôi phục dữ liệu mẫu ban đầu</span>
                     </button>
                   </div>
                 </div>

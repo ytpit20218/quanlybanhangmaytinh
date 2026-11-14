@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { mockDb } from '../../services/mockDatabase';
+import { OrderProcessingFacade } from '../../services/orderProcessingFacade';
 import { useAuth } from '../../state/AuthContext';
 import { useApp } from '../../state/AppContext';
 import { Order, OrderItem, RepairTicket } from '../../types';
@@ -42,7 +43,7 @@ import { M3TextField } from '../../components/m3/M3TextField';
 
 export const CustomerAccountView: React.FC = () => {
   const { user, logout, refreshSession } = useAuth();
-  const { orders, repairTickets, refreshData } = useApp();
+  const { orders, repairTickets, currentUser, refreshData } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -56,6 +57,29 @@ export const CustomerAccountView: React.FC = () => {
     resolveTabFromPath(location.pathname)
   );
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [cancelModalOrder, setCancelModalOrder] = useState<Order | null>(null);
+  const [cancelReason, setCancelReason] = useState('Đổi ý / Đặt lại cấu hình khác');
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
+  const handleConfirmCancel = () => {
+    if (!cancelModalOrder) return;
+    setCancelError(null);
+    const res = OrderProcessingFacade.transitionStatus(
+      cancelModalOrder.id,
+      'cancelled',
+      currentUser,
+      cancelReason.trim() || 'Khách hàng chủ động hủy qua cổng cá nhân'
+    );
+    if (!res.success) {
+      setCancelError(res.errors?.join(' | ') || 'Không thể hủy đơn hàng.');
+    } else {
+      refreshData();
+      if (selectedOrder && selectedOrder.id === cancelModalOrder.id) {
+        setSelectedOrder({ ...selectedOrder, status: 'cancelled' });
+      }
+      setCancelModalOrder(null);
+    }
+  };
 
   useEffect(() => {
     const routeTab = resolveTabFromPath(location.pathname);
@@ -515,6 +539,15 @@ export const CustomerAccountView: React.FC = () => {
                             </div>
 
                             <div className="flex items-center gap-2">
+                              {order.status === 'pending' && (
+                                <button
+                                  type="button"
+                                  onClick={() => setCancelModalOrder(order)}
+                                  className="px-2.5 py-1 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-m3-full transition"
+                                >
+                                  Hủy đơn
+                                </button>
+                              )}
                               <M3Button
                                 variant="outlined"
                                 size="sm"
@@ -742,6 +775,64 @@ export const CustomerAccountView: React.FC = () => {
                   <strong>Ghi chú:</strong> {selectedOrder.notes}
                 </div>
               )}
+
+              {selectedOrder.status === 'pending' && (
+                <div className="pt-3 border-t border-slate-200 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setCancelModalOrder(selectedOrder)}
+                    className="px-3.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition"
+                  >
+                    Hủy đơn hàng này
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CANCEL CONFIRMATION DIALOG */}
+      {cancelModalOrder && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-4">
+            <h3 className="text-base font-bold text-slate-900">Xác nhận hủy đơn hàng</h3>
+            <p className="text-xs text-slate-600">
+              Bạn có chắc chắn muốn hủy đơn hàng <strong className="font-mono text-slate-900">{cancelModalOrder.orderNumber || cancelModalOrder.id}</strong>? Thao tác này không thể hoàn tác.
+            </p>
+            {cancelError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs">
+                {cancelError}
+              </div>
+            )}
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Lý do hủy đơn:</label>
+              <select
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="w-full text-xs border border-slate-200 rounded-lg p-2 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="Đổi ý / Đặt lại cấu hình khác">Đổi ý / Đặt lại cấu hình khác</option>
+                <option value="Muốn thay đổi địa chỉ nhận hàng">Muốn thay đổi địa chỉ nhận hàng</option>
+                <option value="Thời gian giao hàng lâu">Thời gian giao hàng lâu</option>
+                <option value="Lý do khác">Lý do khác</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setCancelModalOrder(null)}
+                className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition"
+              >
+                Không, giữ lại đơn
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancel}
+                className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-xs"
+              >
+                Xác nhận hủy đơn
+              </button>
             </div>
           </div>
         </div>

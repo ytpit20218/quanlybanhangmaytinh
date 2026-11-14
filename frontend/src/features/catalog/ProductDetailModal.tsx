@@ -188,14 +188,17 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   <span>Bảng thông số kỹ thuật chi tiết</span>
                 </div>
                 <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-200 text-xs font-mono overflow-hidden shadow-2xs">
-                  {Object.entries(product.specs).map(([key, val]) => (
-                    <div key={key} className="flex px-3.5 py-2 justify-between items-center hover:bg-slate-50 gap-3">
-                      <span className="text-slate-500 font-medium capitalize">{cleanHtmlText(key)}</span>
-                      <span className="text-slate-900 text-right max-w-[65%] truncate font-bold" title={cleanHtmlText(val)}>
-                        {cleanHtmlText(val)}
-                      </span>
-                    </div>
-                  ))}
+                  {Object.entries(product.specs || {})
+                    .map(([key, val]) => [cleanHtmlText(key), cleanHtmlText(val)] as const)
+                    .filter(([cleanKey, cleanVal]) => cleanKey.length > 0 && !cleanKey.startsWith('&') && cleanVal.length > 0 && !cleanVal.startsWith('&'))
+                    .map(([cleanKey, cleanVal]) => (
+                      <div key={cleanKey} className="flex px-3.5 py-2 justify-between items-center hover:bg-slate-50 gap-3">
+                        <span className="text-slate-500 font-medium capitalize">{cleanKey}</span>
+                        <span className="text-slate-900 text-right max-w-[65%] truncate font-bold" title={cleanVal}>
+                          {cleanVal}
+                        </span>
+                      </div>
+                    ))}
                   <div className="flex px-3.5 py-2 justify-between items-center bg-slate-50/50">
                     <span className="text-slate-500 font-medium">Bảo hành chính hãng</span>
                     <span className="text-slate-900 font-bold">{product.warrantyMonths} Tháng (1-đổi-1 30 ngày)</span>

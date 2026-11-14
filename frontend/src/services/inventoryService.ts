@@ -3,7 +3,7 @@
 // ==========================================
 
 import { BusinessRulesValidator } from '../domain/validation/businessRules';
-import { Inventory, InventoryTransaction, User } from '../types';
+import { Inventory, InventoryTransaction, Product, ProductCategory, User } from '../types';
 import { eventBus } from './eventBus';
 import { mockDb } from './mockDatabase';
 
@@ -82,6 +82,85 @@ export class InventoryService {
     });
 
     return { success: true };
+  }
+
+  /**
+   * Add a brand new hardware product and initialize stock into inventory
+   */
+  static addNewProductStock(
+    productData: {
+      name: string;
+      sku: string;
+      category: ProductCategory;
+      price: number;
+      cost: number;
+      minStockAlert: number;
+      warrantyMonths: number;
+      location?: string;
+      initialStock: number;
+      image?: string;
+      specs?: Record<string, string>;
+      description?: string;
+    },
+    reason: string,
+    actor: User
+  ): { success: boolean; error?: string; product?: Product } {
+    if (!productData.name || productData.name.trim().length < 3) {
+      return { success: false, error: 'Tên sản phẩm phải có ít nhất 3 ký tự.' };
+    }
+    if (!productData.sku || productData.sku.trim().length < 3) {
+      return { success: false, error: 'Mã SKU phải có ít nhất 3 ký tự.' };
+    }
+    const reasonValidation = BusinessRulesValidator.validateStockTransactionReason(actor.id, reason);
+    if (!reasonValidation.isValid) {
+      return { success: false, error: reasonValidation.errors.join(' ') };
+    }
+
+    const skuUpper = productData.sku.trim().toUpperCase();
+    const existing = mockDb.getProducts().find((p) => p.sku.toUpperCase() === skuUpper);
+    if (existing) {
+      return { success: false, error: `Mã SKU [${skuUpper}] đã tồn tại trong danh mục.` };
+    }
+
+    const productId = `prod_${Date.now()}`;
+    const newProduct: Product = {
+      id: productId,
+      sku: skuUpper,
+      name: productData.name.trim(),
+      category: productData.category,
+      price: Number(productData.price),
+      cost: Number(productData.cost),
+      warrantyMonths: Number(productData.warrantyMonths) || 24,
+      minStockAlert: Number(productData.minStockAlert) || 3,
+      description:
+        productData.description?.trim() ||
+        `Sản phẩm chính hãng ${productData.name.trim()}, bảo hành ${productData.warrantyMonths || 24} tháng 1-đổi-1.`,
+      image:
+        productData.image?.trim() ||
+        'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=400&q=80',
+      specs: productData.specs || {
+        'Bảo hành': `${productData.warrantyMonths || 24} Tháng`,
+        'Tình trạng': 'Mới 100% nguyên niêm phong',
+      },
+    };
+
+    const initialStock = Math.max(0, Number(productData.initialStock) || 0);
+    const location = productData.location?.trim() || 'KHO-TONG-A1';
+
+    mockDb.addProduct(newProduct, initialStock, location, actor.name);
+
+    eventBus.emit({
+      type: 'STOCK_UPDATED',
+      payload: {
+        productId,
+        productName: newProduct.name,
+        newOnHand: initialStock,
+        newReserved: 0,
+        available: initialStock,
+      },
+    });
+
+    return { success: true, product: newProduct };
   }
 
   /**

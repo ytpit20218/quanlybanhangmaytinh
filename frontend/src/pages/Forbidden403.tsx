@@ -36,22 +36,22 @@ export const Forbidden403: React.FC<Forbidden403Props> = ({ requiredRoles = [] }
         </div>
 
         <div className="inline-block px-3 py-1 bg-rose-50 text-rose-700 font-mono text-xs font-bold rounded-md uppercase tracking-wider mb-2 border border-rose-200">
-          HTTP 403 • Access Forbidden
+          HTTP 403 • Quyền Truy Cập Bị Từ Chối (Access Denied)
         </div>
 
         <h1 className="font-display font-bold text-2xl text-slate-900 mt-1">
-          Restricted Portal Access
+          Khu Vực Giới Hạn Quyền Truy Cập
         </h1>
 
         <p className="text-xs text-slate-600 mt-3 leading-relaxed">
-          Your account <span className="text-slate-900 font-semibold font-mono">{user?.email}</span> possesses role{' '}
-          <span className="text-amber-700 font-bold uppercase font-mono">[{user?.role}]</span>, which is not authorized to
-          access this internal section.
+          Tài khoản của bạn <span className="text-slate-900 font-semibold font-mono">{user?.email}</span> mang vai trò{' '}
+          <span className="text-amber-700 font-bold uppercase font-mono">[{user?.role}]</span>, không được cấp quyền
+          truy cập vào phân hệ làm việc này.
         </p>
 
         {requiredRoles.length > 0 && (
           <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600">
-            <div>Authorized role(s) required:</div>
+            <div>Yêu cầu vai trò ủy quyền:</div>
             <div className="text-rose-700 font-bold mt-0.5 uppercase">
               {requiredRoles.map((r) => roleNameMap[r] || r).join(', ')}
             </div>
@@ -63,7 +63,7 @@ export const Forbidden403: React.FC<Forbidden403Props> = ({ requiredRoles = [] }
             onClick={handleGoToAuthorizedPortal}
             className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition flex items-center justify-center space-x-2 shadow-sm"
           >
-            <span>Return to Authorized Portal</span>
+            <span>Về cổng làm việc được ủy quyền</span>
             <ArrowRight className="w-4 h-4" />
           </button>
 
@@ -71,7 +71,7 @@ export const Forbidden403: React.FC<Forbidden403Props> = ({ requiredRoles = [] }
             onClick={logout}
             className="w-full py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-lg transition border border-slate-200"
           >
-            Log Out & Switch Account
+            Đăng xuất & Đổi tài khoản
           </button>
         </div>
       </div>

@@ -113,6 +113,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="products" element={<AdminProductsView />} />
         <Route path="customers" element={<AdminCustomersView />} />
         <Route path="orders" element={<PosView />} />
+        <Route path="pos" element={<PosView />} />
         <Route path="inventory" element={<InventoryView />} />
         <Route path="repairs" element={<RepairBenchView />} />
       </Route>
